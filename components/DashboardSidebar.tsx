@@ -11,8 +11,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, ChevronsUpDown, LayoutDashboard, Wallet, CreditCard, PiggyBank, TrendingUp } from "lucide-react";
+import { LogOut, ChevronsUpDown, LayoutDashboard, Wallet, CreditCard, PiggyBank, TrendingUp, Trash2 } from "lucide-react";
 import { useProfileContext } from "@/components/ProfileProvider";
 import { getExpenseAmount, getIncomeAmount } from "@/lib/types";
 
@@ -28,6 +37,8 @@ type User = {
 export default function DashboardSidebar() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const { loading, incomeSources, expenseCategories } = useProfileContext();
   const totalIncome = incomeSources.reduce((sum, s) => sum + getIncomeAmount(s), 0);
   const totalExpenses = expenseCategories.reduce(
@@ -54,6 +65,24 @@ export default function DashboardSidebar() {
     const supabase = createClient();
     await supabase.auth.signOut();
     window.location.href = "/login";
+  };
+
+  const handleConfirmDeleteAccount = async () => {
+    setDeleteLoading(true);
+    try {
+      const res = await fetch("/api/account/delete", { method: "POST" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data?.error ?? "Erreur lors de la suppression du compte.");
+        return;
+      }
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      window.location.href = "/";
+    } finally {
+      setDeleteLoading(false);
+      setDeleteDialogOpen(false);
+    }
   };
 
   const displayName =
@@ -160,13 +189,51 @@ export default function DashboardSidebar() {
           <DropdownMenuContent align="start" side="top" className="w-56">
             <DropdownMenuItem
               onClick={handleLogout}
-              className="cursor-pointer text-destructive focus:text-destructive"
+              className="cursor-pointer focus:text-destructive"
             >
               <LogOut className="mr-2 h-4 w-4" />
               Déconnexion
             </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setDeleteDialogOpen(true)}
+              className="cursor-pointer text-destructive focus:text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Supprimer le compte
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Supprimer le compte</DialogTitle>
+              <DialogDescription>
+                Êtes-vous sûr ? Cette action va supprimer définitivement toutes
+                les données liées à votre compte (revenus, dépenses, épargne,
+                PEA, etc.). Cette action est irréversible.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDeleteDialogOpen(false)}
+                disabled={deleteLoading}
+              >
+                Annuler
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleConfirmDeleteAccount}
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? "Suppression…" : "Supprimer le compte"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </aside>
   );
