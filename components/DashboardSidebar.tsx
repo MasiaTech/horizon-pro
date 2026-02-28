@@ -47,7 +47,10 @@ export default function DashboardSidebar() {
   );
   const resteAInvestir = totalIncome - totalExpenses;
   const showEpargne =
-    !loading && totalIncome > 0 && totalExpenses >= 0 && resteAInvestir > 0;
+    !loading &&
+    totalIncome > 0 &&
+    totalExpenses > 0 &&
+    resteAInvestir > 0;
 
   useEffect(() => {
     const supabase = createClient();
