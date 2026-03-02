@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   closestCenter,
@@ -603,6 +604,7 @@ function DraftRow({
  * Page de configuration des dépenses : un bloc (card) par catégorie, chacun avec son tableau.
  */
 export default function DepensesPage() {
+  const router = useRouter();
   const {
     loading,
     incomeSources,
@@ -660,6 +662,12 @@ export default function DepensesPage() {
     (sum, s) => sum + getIncomeAmount(s),
     0,
   );
+
+  /** Redirection : pas d'accès aux dépenses sans revenus saisis */
+  useEffect(() => {
+    if (loading) return;
+    if (totalIncome <= 0) router.replace("/dashboard");
+  }, [loading, totalIncome, router]);
 
   useEffect(() => {
     if (loading) return;

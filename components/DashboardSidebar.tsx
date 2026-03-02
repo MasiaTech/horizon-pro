@@ -126,17 +126,19 @@ export default function DashboardSidebar() {
           <Wallet className="size-4 shrink-0" />
           <span>Revenus</span>
         </Link>
-        <Link
-          href="/dashboard/depenses"
-          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            pathname === "/dashboard/depenses"
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-          }`}
-        >
-          <CreditCard className="size-4 shrink-0" />
-          <span>Dépenses</span>
-        </Link>
+        {totalIncome > 0 && (
+          <Link
+            href="/dashboard/depenses"
+            className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+              pathname === "/dashboard/depenses"
+                ? "bg-accent text-accent-foreground"
+                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            }`}
+          >
+            <CreditCard className="size-4 shrink-0" />
+            <span>Dépenses</span>
+          </Link>
+        )}
         {showEpargne && (
           <>
             <Link
