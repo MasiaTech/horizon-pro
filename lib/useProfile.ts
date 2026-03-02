@@ -10,6 +10,7 @@ import type {
   ExpenseAmountType,
   PlacementAllocation,
   SavingsAccount,
+  SavingsObjective,
   PEAHolding,
 } from "@/lib/types";
 import {
@@ -19,6 +20,8 @@ import {
   DEFAULT_EXPENSE_GROUP_NAMES,
   DEFAULT_PLACEMENT_ALLOCATION,
   DEFAULT_SAVINGS_ACCOUNTS,
+  DEFAULT_SAVINGS_OBJECTIVES,
+  SÉCURITÉ_OBJECTIVE_NAME,
   DEFAULT_PEA_ACTIONS,
   DEFAULT_PEA_ETFS,
   normalizeExpenseCategory,
@@ -48,6 +51,7 @@ export function useProfile(autoSaveDelayMs = 600) {
     expenseGroupNames: DEFAULT_EXPENSE_GROUP_NAMES,
     placementAllocation: DEFAULT_PLACEMENT_ALLOCATION,
     savingsAccounts: DEFAULT_SAVINGS_ACCOUNTS,
+    savingsObjectives: DEFAULT_SAVINGS_OBJECTIVES,
     peaActions: DEFAULT_PEA_ACTIONS,
     peaEtfs: DEFAULT_PEA_ETFS,
   });
@@ -72,6 +76,9 @@ export function useProfile(autoSaveDelayMs = 600) {
   const [savingsAccounts, setSavingsAccounts] = useState<SavingsAccount[]>(
     DEFAULT_SAVINGS_ACCOUNTS,
   );
+  const [savingsObjectives, setSavingsObjectives] = useState<SavingsObjective[]>(
+    DEFAULT_SAVINGS_OBJECTIVES,
+  );
   const [peaActions, setPeaActions] = useState<PEAHolding[]>(DEFAULT_PEA_ACTIONS);
   const [peaEtfs, setPeaEtfs] = useState<PEAHolding[]>(DEFAULT_PEA_ETFS);
 
@@ -82,6 +89,7 @@ export function useProfile(autoSaveDelayMs = 600) {
     expenseGroupNames,
     placementAllocation,
     savingsAccounts,
+    savingsObjectives,
     peaActions,
     peaEtfs,
   };
@@ -111,6 +119,7 @@ export function useProfile(autoSaveDelayMs = 600) {
         setExpenseGroupNames(DEFAULT_EXPENSE_GROUP_NAMES);
         setPlacementAllocation(DEFAULT_PLACEMENT_ALLOCATION);
         setSavingsAccounts(DEFAULT_SAVINGS_ACCOUNTS);
+        setSavingsObjectives(DEFAULT_SAVINGS_OBJECTIVES);
         setPeaActions(DEFAULT_PEA_ACTIONS);
         setPeaEtfs(DEFAULT_PEA_ETFS);
         setLoading(false);
@@ -200,15 +209,19 @@ export function useProfile(autoSaveDelayMs = 600) {
         f === "daily" || f === "weekly" || f === "monthly" || f === "annual"
           ? f
           : "daily";
-      const mapped = (savings as SavingsAccount[]).map((a, i) => ({
-        name: String(a.name ?? ""),
+      const mapped = (savings as (SavingsAccount & { goalAmount?: number })[]).map((a, i) => {
+        const rawName = String(a.name ?? "");
+        const name = rawName.trim() === "Sécurité" ? "Livret A" : rawName;
+        return {
+        name,
         ratePercent: Number(a.ratePercent) ?? 0,
         interestFrequency: validFreq(a.interestFrequency) as SavingsAccount["interestFrequency"],
         allocationPercent:
           a.allocationPercent != null ? Number(a.allocationPercent) : i === 0 ? 100 : 0,
         currentBalance: a.currentBalance != null ? Number(a.currentBalance) : 0,
-        goalAmount: a.goalAmount != null ? Number(a.goalAmount) : undefined,
-      }));
+        plafond: a.plafond != null ? Number(a.plafond) : 0,
+      };
+      });
       const sum = mapped.reduce((s, a) => s + a.allocationPercent!, 0);
       if (sum !== 100 && mapped.length > 0) {
         const n = mapped.length;
@@ -223,6 +236,33 @@ export function useProfile(autoSaveDelayMs = 600) {
       setSavingsAccounts(mapped);
     } else {
       setSavingsAccounts(DEFAULT_SAVINGS_ACCOUNTS);
+    }
+    const objectives = (data as Profile).savings_objectives;
+    if (Array.isArray(objectives) && objectives.length > 0) {
+      const mapped = (objectives as SavingsObjective[]).map((o) => ({
+        name: String(o.name ?? ""),
+        goalAmount: o.goalAmount != null ? Number(o.goalAmount) : undefined,
+        locked: Boolean(o.locked),
+        accountNames: Array.isArray(o.accountNames)
+          ? o.accountNames.map((n) => (String(n).trim() === "Sécurité" ? "Livret A" : String(n)))
+          : [],
+      }));
+      const hasSecurite = mapped.some((o) => o.name.trim() === SÉCURITÉ_OBJECTIVE_NAME);
+      if (!hasSecurite) {
+        const firstAccountName: string =
+          Array.isArray(savings) && (savings as SavingsAccount[])[0]?.name
+            ? (savings as SavingsAccount[])[0].name
+            : "Livret A";
+        mapped.unshift({
+          name: SÉCURITÉ_OBJECTIVE_NAME,
+          goalAmount: 0,
+          locked: true,
+          accountNames: [firstAccountName],
+        });
+      }
+      setSavingsObjectives(mapped);
+    } else {
+      setSavingsObjectives(DEFAULT_SAVINGS_OBJECTIVES);
     }
     const actions = (data as Profile).pea_actions;
     const etfs = (data as Profile).pea_etfs;
@@ -267,6 +307,7 @@ export function useProfile(autoSaveDelayMs = 600) {
       expense_group_names: ref.expenseGroupNames,
       placement_allocation: ref.placementAllocation,
       savings_accounts: ref.savingsAccounts,
+      savings_objectives: ref.savingsObjectives,
       pea_actions: ref.peaActions,
       pea_etfs: ref.peaEtfs,
     };
@@ -326,6 +367,8 @@ export function useProfile(autoSaveDelayMs = 600) {
     setPlacementAllocation,
     savingsAccounts,
     setSavingsAccounts,
+    savingsObjectives,
+    setSavingsObjectives,
     peaActions,
     setPeaActions,
     peaEtfs,

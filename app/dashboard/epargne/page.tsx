@@ -16,13 +16,24 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useProfileContext } from "@/components/ProfileProvider";
 import { useSortableSensors } from "@/lib/dnd-sensors";
-import type { InterestFrequency, SavingsAccount } from "@/lib/types";
-import { getExpenseAmount, getIncomeAmount } from "@/lib/types";
-import { Plus, X, GripVertical } from "lucide-react";
+import type {
+  InterestFrequency,
+  SavingsAccount,
+  SavingsObjective,
+} from "@/lib/types";
+import {
+  getExpenseAmount,
+  getIncomeAmount,
+  SÉCURITÉ_OBJECTIVE_NAME,
+} from "@/lib/types";
+import { Lock, Plus, X, GripVertical } from "lucide-react";
 import {
   Area,
   AreaChart,
   CartesianGrid,
+  Legend,
+  Line,
+  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -72,7 +83,96 @@ const INTEREST_FREQUENCY_DESCRIPTION: Record<InterestFrequency, string> = {
   annual:
     "Les intérêts sont appliqués une fois par an → cumul le plus lent.",
 };
-const SÉCURITÉ_NAME = "Sécurité";
+/** Comptes épargne dont le nom est dans l'objectif */
+function getAccountsForObjective(
+  objective: SavingsObjective,
+  accounts: SavingsAccount[],
+): SavingsAccount[] {
+  const names = new Set(objective.accountNames.map((n) => n.trim()).filter(Boolean));
+  return accounts.filter((a) => names.has(a.name.trim()));
+}
+
+/** Données projetées par mois pour un objectif : chaque compte + total (avec plafonds et intérêts). */
+function simulateObjectiveByMonth(
+  objective: SavingsObjective,
+  accounts: SavingsAccount[],
+  monthlyEpargneTotal: number,
+  goalAmount: number,
+  maxMonths: number,
+): {
+  data: { month: number; total: number; [accountName: string]: number }[];
+  monthGoalReached: number | null;
+} {
+  const list = getAccountsForObjective(objective, accounts);
+  if (list.length === 0) {
+    return {
+      data: [{ month: 0, total: 0 }],
+      monthGoalReached: null,
+    };
+  }
+  const data: { month: number; total: number; [accountName: string]: number }[] = [];
+  const balances: Record<string, number> = {};
+  const growthPerMonth: Record<string, number> = {};
+  const monthlyIn: Record<string, number> = {};
+  const plafondMap: Record<string, number> = {};
+  let totalAlloc = 0;
+  for (const a of list) {
+    balances[a.name] = Number(a.currentBalance) || 0;
+    const r = (Number(a.ratePercent) || 0) / 100;
+    const freq = (a.interestFrequency ?? "daily") as InterestFrequency;
+    if (freq === "annual") {
+      growthPerMonth[a.name] = 1;
+    } else if (freq === "daily") {
+      growthPerMonth[a.name] = Math.pow(1 + r / 365, 365 / 12);
+    } else if (freq === "weekly") {
+      growthPerMonth[a.name] = Math.pow(1 + r / 52, 52 / 12);
+    } else {
+      growthPerMonth[a.name] = 1 + r / 12;
+    }
+    const alloc = Number(a.allocationPercent) ?? 0;
+    totalAlloc += alloc;
+    monthlyIn[a.name] = (monthlyEpargneTotal * alloc) / 100;
+    plafondMap[a.name] = Number(a.plafond) || 0;
+  }
+  const dataRow: { month: number; total: number; [k: string]: number } = {
+    month: 0,
+    total: 0,
+  };
+  for (const a of list) {
+    dataRow[a.name] = balances[a.name];
+    dataRow.total += balances[a.name];
+  }
+  data.push({ ...dataRow });
+  let monthGoalReached: number | null = dataRow.total >= goalAmount && goalAmount > 0 ? 0 : null;
+  for (let m = 1; m <= maxMonths; m++) {
+    const row: { month: number; total: number; [k: string]: number } = {
+      month: m,
+      total: 0,
+    };
+    for (const a of list) {
+      let b = balances[a.name];
+      const freq = (a.interestFrequency ?? "daily") as InterestFrequency;
+      if (freq === "annual") {
+        b += monthlyIn[a.name];
+        if (m % 12 === 0) b *= 1 + (Number(a.ratePercent) || 0) / 100;
+      } else {
+        b = b * (growthPerMonth[a.name] ?? 1) + monthlyIn[a.name];
+      }
+      const plaf = plafondMap[a.name];
+      if (plaf > 0 && b > plaf) b = plaf;
+      balances[a.name] = b;
+      row[a.name] = b;
+      row.total += b;
+    }
+    data.push(row);
+    if (monthGoalReached == null && goalAmount > 0 && row.total >= goalAmount) {
+      monthGoalReached = m;
+    }
+  }
+  return { data, monthGoalReached };
+}
+
+const SÉCURITÉ_NAME = SÉCURITÉ_OBJECTIVE_NAME;
 
 /** Carte compte épargne déplaçable */
 function SortableAccountCard({
@@ -265,6 +365,8 @@ export default function EpargnePage() {
     placementAllocation,
     savingsAccounts,
     setSavingsAccounts,
+    savingsObjectives,
+    setSavingsObjectives,
     saveProfile,
     skipNextAutoSave,
     autoSaveDelayMs,
@@ -273,10 +375,15 @@ export default function EpargnePage() {
   const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(
     null,
   );
+  const [confirmDeleteObjectiveIndex, setConfirmDeleteObjectiveIndex] = useState<
+    number | null
+  >(null);
   const dataRef = useRef({
     savingsAccounts,
+    savingsObjectives,
   });
   dataRef.current.savingsAccounts = savingsAccounts;
+  dataRef.current.savingsObjectives = savingsObjectives;
 
   const totalIncome = incomeSources.reduce(
     (sum, s) => sum + getIncomeAmount(s),
@@ -308,12 +415,14 @@ export default function EpargnePage() {
     const timeoutId = setTimeout(() => {
       saveProfile({
         savings_accounts: dataRef.current.savingsAccounts,
+        savings_objectives: dataRef.current.savingsObjectives,
       });
     }, autoSaveDelayMs);
     return () => clearTimeout(timeoutId);
   }, [
     loading,
     savingsAccounts,
+    savingsObjectives,
     saveProfile,
     skipNextAutoSave,
     autoSaveDelayMs,
@@ -323,6 +432,7 @@ export default function EpargnePage() {
     const flush = () => {
       const payload = JSON.stringify({
         savings_accounts: dataRef.current.savingsAccounts,
+        savings_objectives: dataRef.current.savingsObjectives,
       });
       navigator.sendBeacon(
         "/api/profile/save",
@@ -374,10 +484,10 @@ export default function EpargnePage() {
         };
       } else if (field === "currentBalance")
         next[index] = { ...cur, currentBalance: Number(value) || 0 };
-      else if (field === "goalAmount")
+      else if (field === "plafond")
         next[index] = {
           ...cur,
-          goalAmount: value === "" ? undefined : Number(value) || 0,
+          plafond: value === "" || value === 0 ? 0 : Number(value) || 0,
         };
       return next;
     });
@@ -393,6 +503,7 @@ export default function EpargnePage() {
           interestFrequency: "daily" as const,
           allocationPercent: 0,
           currentBalance: 0,
+          plafond: 0,
         },
       ];
       const n = next.length;
@@ -425,6 +536,72 @@ export default function EpargnePage() {
     });
     setConfirmDeleteIndex(null);
   };
+
+  const updateObjective = (
+    objIndex: number,
+    field: keyof SavingsObjective,
+    value: string | number | string[],
+  ) => {
+    setSavingsObjectives((prev) => {
+      const next = prev.map((o) => ({ ...o, accountNames: [...(o.accountNames ?? [])] }));
+      const cur = next[objIndex];
+      if (!cur) return prev;
+      if (field === "name") next[objIndex] = { ...cur, name: String(value) };
+      else if (field === "goalAmount") next[objIndex] = { ...cur, goalAmount: Number(value) || 0 };
+      else if (field === "accountNames") next[objIndex] = { ...cur, accountNames: value as string[] };
+      return next;
+    });
+  };
+
+  const addObjective = () => {
+    setSavingsObjectives((prev) => [
+      ...prev,
+      { name: "Nouvel objectif", goalAmount: 0, locked: false, accountNames: [] },
+    ]);
+  };
+
+  const removeObjective = (objIndex: number) => {
+    const obj = savingsObjectives[objIndex];
+    if (obj?.locked) return;
+    setSavingsObjectives((prev) => prev.filter((_, i) => i !== objIndex));
+    setConfirmDeleteObjectiveIndex(null);
+  };
+
+  const toggleAccountInObjective = (objIndex: number, accountName: string) => {
+    setSavingsObjectives((prev) => {
+      const next = prev.map((o) => ({ ...o, accountNames: [...(o.accountNames ?? [])] }));
+      const cur = next[objIndex];
+      if (!cur) return prev;
+      const currentlyIn = cur.accountNames.includes(accountName);
+      if (currentlyIn) {
+        next[objIndex] = {
+          ...cur,
+          accountNames: cur.accountNames.filter((n) => n !== accountName),
+        };
+      } else {
+        for (let i = 0; i < next.length; i++) {
+          if (i !== objIndex) {
+            next[i] = {
+              ...next[i],
+              accountNames: next[i].accountNames.filter((n) => n !== accountName),
+            };
+          }
+        }
+        next[objIndex] = {
+          ...cur,
+          accountNames: [...cur.accountNames, accountName],
+        };
+      }
+      return next;
+    });
+  };
+
+  const OBJECTIVE_CHART_COLORS = [
+    "hsl(142, 60%, 42%)",
+    "hsl(210, 65%, 45%)",
+    "hsl(30, 70%, 50%)",
+    "hsl(280, 60%, 50%)",
+  ];
 
   const sensors = useSortableSensors();
 
@@ -490,6 +667,310 @@ export default function EpargnePage() {
         </CardContent>
       </Card>
 
+      {/* Section Objectifs : un graphique par objectif (une courbe par compte + courbe cumul) */}
+      <div className="mb-6 space-y-6">
+        <h2 className="text-lg font-semibold text-foreground">Objectifs</h2>
+        {savingsObjectives.map((objective, objIndex) => {
+          const isSecurite = objective.name.trim() === SÉCURITÉ_OBJECTIVE_NAME;
+          const goalAmount =
+            isSecurite ? goalSecurite : (objective.goalAmount ?? 0);
+          const { data: chartData, monthGoalReached } = simulateObjectiveByMonth(
+            objective,
+            savingsAccounts,
+            monthlyEpargne,
+            goalAmount,
+            goalAmount > 0 ? 120 : 24,
+          );
+          const accountNamesInObjective = getAccountsForObjective(
+            objective,
+            savingsAccounts,
+          ).map((a) => a.name);
+          /** Données affichées : jusqu'à l'objectif + 6 mois pour voir la suite */
+          const displayData =
+            goalAmount > 0 && monthGoalReached != null
+              ? chartData.filter(
+                  (row) => row.month <= monthGoalReached + 6,
+                )
+              : chartData;
+          const maxMonth =
+            displayData.length > 0
+              ? (displayData[displayData.length - 1]?.month ?? 0)
+              : 0;
+          return (
+            <Card key={`obj-${objIndex}`}>
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    {objective.locked && (
+                      <Lock className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <Input
+                      value={objective.name}
+                      onChange={(e) =>
+                        updateObjective(objIndex, "name", e.target.value)
+                      }
+                      placeholder="Nom de l'objectif"
+                      disabled={objective.locked}
+                      className="h-auto border-0 bg-transparent px-0 text-lg font-semibold shadow-none focus-visible:ring-0 disabled:opacity-100"
+                    />
+                  </div>
+                  {!objective.locked && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setConfirmDeleteObjectiveIndex(objIndex)}
+                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      title="Supprimer l'objectif"
+                      aria-label={`Supprimer ${objective.name}`}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-muted-foreground">
+                    Objectif (€)
+                  </label>
+                  {isSecurite ? (
+                    <p className="text-sm font-medium text-foreground">
+                      {goalSecurite.toLocaleString("fr-FR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      € (6 mois de dépenses)
+                    </p>
+                  ) : (
+                    <NumberInput
+                      value={objective.goalAmount ?? 0}
+                      onChange={(n) =>
+                        updateObjective(objIndex, "goalAmount", n)
+                      }
+                      placeholder="0"
+                      className="w-36"
+                    />
+                  )}
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-muted-foreground">
+                    Comptes associés
+                  </label>
+                  <p className="mb-2 text-xs text-muted-foreground">
+                    Un compte ne peut être associé qu&apos;à un seul objectif.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    {savingsAccounts.map((acc) => {
+                      const checked = (objective.accountNames ?? []).includes(
+                        acc.name.trim(),
+                      );
+                      return (
+                        <label
+                          key={acc.name}
+                          className="flex cursor-pointer items-center gap-2 text-sm"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() =>
+                              toggleAccountInObjective(objIndex, acc.name.trim())
+                            }
+                            className="h-4 w-4 rounded border-border"
+                          />
+                          <span className="text-foreground">{acc.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                {accountNamesInObjective.length > 0 && (
+                  <>
+                    {goalAmount > 0 && monthGoalReached != null && (
+                      <p className="text-sm text-muted-foreground">
+                        Atteinte de l&apos;objectif prévue dans{" "}
+                        {Math.floor(monthGoalReached / 12) > 0 && (
+                          <>
+                            {Math.floor(monthGoalReached / 12)} an{" "}
+                            {Math.floor(monthGoalReached / 12) > 1 ? "s " : ""}
+                          </>
+                        )}
+                        {monthGoalReached % 12} mois
+                      </p>
+                    )}
+                    <div className="h-[240px] w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart
+                          data={displayData}
+                          margin={{
+                            top: 16,
+                            right: 8,
+                            left: 0,
+                            bottom: 0,
+                          }}
+                        >
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            className="stroke-muted"
+                            vertical={false}
+                            horizontal={true}
+                          />
+                          <XAxis
+                            dataKey="month"
+                            type="number"
+                            domain={[0, "dataMax"]}
+                            ticks={(() => {
+                              const t: number[] = [0];
+                              for (let m = 6; m <= maxMonth; m += 6) t.push(m);
+                              return t;
+                            })()}
+                            tickFormatter={(m) =>
+                              formatMonthAxisLabel(Number(m))
+                            }
+                            className="text-xs"
+                            tick={{ fill: "hsl(var(--muted-foreground))" }}
+                            axisLine={{ stroke: "hsl(var(--border))" }}
+                          />
+                          <YAxis
+                            tickFormatter={(v) => `${v} €`}
+                            className="text-xs"
+                            tick={{ fill: "hsl(var(--muted-foreground))" }}
+                            axisLine={false}
+                            width={50}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (!active || !payload?.length) return null;
+                              const row = payload[0]?.payload as Record<
+                                string,
+                                number
+                              >;
+                              if (!row) return null;
+                              return (
+                                <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-md">
+                                  <p className="mb-1 font-medium">
+                                    {formatMonthAxisLabel(row.month)}
+                                  </p>
+                                  {accountNamesInObjective.map((name, i) => (
+                                    <p
+                                      key={name}
+                                      className="tabular-nums"
+                                      style={{
+                                        color:
+                                          OBJECTIVE_CHART_COLORS[
+                                            i % OBJECTIVE_CHART_COLORS.length
+                                          ],
+                                      }}
+                                    >
+                                      {name}:{" "}
+                                      {(row[name] ?? 0).toLocaleString("fr-FR", {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2,
+                                      })}{" "}
+                                      €
+                                    </p>
+                                  ))}
+                                  <p className="mt-1 font-medium text-foreground">
+                                    Total:{" "}
+                                    {(row.total ?? 0).toLocaleString("fr-FR", {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}{" "}
+                                    €
+                                  </p>
+                                </div>
+                              );
+                            }}
+                          />
+                          <Legend />
+                          {accountNamesInObjective.map((name, i) => (
+                            <Line
+                              key={name}
+                              type="monotone"
+                              dataKey={name}
+                              name={name}
+                              stroke={
+                                OBJECTIVE_CHART_COLORS[
+                                  i % OBJECTIVE_CHART_COLORS.length
+                                ]
+                              }
+                              strokeWidth={2}
+                              dot={false}
+                              isAnimationActive={true}
+                            />
+                          ))}
+                          <Line
+                            type="monotone"
+                            dataKey="total"
+                            name="Total"
+                            stroke="hsl(45, 88%, 48%)"
+                            strokeWidth={2.5}
+                            dot={false}
+                            isAnimationActive={true}
+                          />
+                          {goalAmount > 0 && (
+                            <ReferenceLine
+                              y={goalAmount}
+                              stroke="hsl(var(--destructive))"
+                              strokeWidth={2}
+                              strokeDasharray="4 4"
+                              label={{
+                                value: "Objectif",
+                                position: "right",
+                                fill: "hsl(var(--destructive))",
+                                fontSize: 11,
+                              }}
+                            />
+                          )}
+                          {goalAmount > 0 &&
+                            monthGoalReached != null &&
+                            monthGoalReached > 0 && (
+                              <ReferenceLine
+                                x={monthGoalReached}
+                                stroke="rgba(255, 255, 255, 0.85)"
+                                strokeWidth={2.5}
+                                strokeDasharray="6 6"
+                                label={{
+                                  value: `Atteint (${formatMonthAxisLabel(monthGoalReached)})`,
+                                  position: "insideTopRight",
+                                  fill: "hsl(var(--muted-foreground))",
+                                  fontSize: 11,
+                                }}
+                              />
+                            )}
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+        <Card
+          role="button"
+          tabIndex={0}
+          className="cursor-pointer border-2 border-dashed border-muted-foreground/30 bg-transparent transition-colors hover:border-primary/50 hover:bg-muted/20"
+          onClick={addObjective}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              addObjective();
+            }
+          }}
+        >
+          <CardContent className="flex min-h-[80px] items-center justify-center p-6">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Plus className="h-5 w-5" />
+              <span className="text-sm font-medium">Ajouter un objectif</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <h2 className="mb-4 text-lg font-semibold text-foreground">
+        Comptes épargne
+      </h2>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -501,38 +982,9 @@ export default function EpargnePage() {
         >
           {savingsAccounts.map((account, index) => {
             const balance = Number(account.currentBalance) || 0;
-            const rate = Number(account.ratePercent) || 0;
             const allocation = Number(account.allocationPercent) ?? 0;
-            const monthlyContribution =
-              (monthlyEpargne * allocation) / 100;
-            const isSecurite = account.name.trim() === SÉCURITÉ_NAME;
-            const goal = isSecurite ? goalSecurite : (account.goalAmount ?? 0);
-            const frequency = (account.interestFrequency ?? "daily") as InterestFrequency;
-            const months = monthsToReachGoal(
-              balance,
-              monthlyContribution,
-              rate,
-              goal,
-              frequency,
-            );
-            const years = months != null ? Math.floor(months / 12) : null;
-            const remainingMonths = months != null ? months % 12 : null;
-            const chartMonths =
-              goal > 0 && months != null
-                ? Math.min(months + 6, 120)
-                : 24;
-            const monthlyData = getProjectedBalanceByMonth(
-              balance,
-              monthlyContribution,
-              rate,
-              frequency,
-              chartMonths,
-            );
-            const monthGoalReachedFromChart = getMonthGoalReachedFromData(
-              monthlyData,
-              goal,
-            );
-            const chartDataSmooth = monthlyData;
+            const monthlyContribution = (monthlyEpargne * allocation) / 100;
+            const plafond = Number(account.plafond) ?? 0;
 
             return (
               <SortableAccountCard key={index} id={`epargne-${index}`}>
@@ -660,66 +1112,26 @@ export default function EpargnePage() {
                     className="w-36"
                   />
                 </div>
-              </div>
-              {!isSecurite && (
                 <div>
                   <label className="mb-1 block text-sm font-medium text-muted-foreground">
-                    Objectif (€)
+                    Plafond (€)
                   </label>
                   <NumberInput
-                    value={account.goalAmount ?? 0}
-                    onChange={(n) =>
-                      updateAccount(
-                        index,
-                        "goalAmount",
-                        n === 0 ? "" : n,
-                      )
-                    }
-                    placeholder="Optionnel"
+                    value={plafond}
+                    onChange={(n) => updateAccount(index, "plafond", n)}
+                    placeholder="0 = pas de plafond"
                     className="w-36"
                   />
                 </div>
-              )}
-              {goal > 0 && (
-                <div className="rounded-md bg-muted/50 p-3 text-sm">
-                  <p className="font-medium text-foreground">
-                    Objectif :{" "}
-                    {goal.toLocaleString("fr-FR", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}{" "}
-                    €{isSecurite && " (6 mois de dépenses)"}
-                  </p>
-                  {months != null && (
-                    <p className="mt-1 text-muted-foreground">
-                      Temps pour atteindre l&apos;objectif :{" "}
-                      {years !== null && remainingMonths !== null && (
-                        <>
-                          {years > 0 && (
-                            <>
-                              {years} an{years > 1 ? "s" : ""}{" "}
-                            </>
-                          )}
-                          {remainingMonths} mois
-                        </>
-                      )}
-                    </p>
-                  )}
-                  {months === null && balance < goal && (
-                    <p className="mt-1 text-muted-foreground">
-                      Objectif hors atteinte avec les paramètres actuels.
-                    </p>
-                  )}
-                </div>
-              )}
-              <div className="mt-4">
+              </div>
+              <div className="mt-4" style={{ display: "none" }}>
                 <p className="mb-2 text-sm font-medium text-muted-foreground">
                   Évolution du solde (jusqu’à l’objectif + 6 mois)
                 </p>
                 <div className="h-[220px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
-                      data={chartDataSmooth}
+                      data={[]}
                       margin={{ top: 28, right: 8, left: 0, bottom: 0 }}
                     >
                       <defs>
@@ -754,10 +1166,7 @@ export default function EpargnePage() {
                         domain={[0, "dataMax"]}
                         ticks={(() => {
                           const max =
-                            chartDataSmooth.length > 0
-                              ? chartDataSmooth[chartDataSmooth.length - 1]
-                                  ?.month ?? 0
-                              : 0;
+                            0;
                           const t: number[] = [0];
                           for (let m = 6; m <= max; m += 6) t.push(m);
                           return t;
@@ -774,9 +1183,9 @@ export default function EpargnePage() {
                         axisLine={false}
                         width={50}
                       />
-                      {goal > 0 && (
+                      {false && (
                         <ReferenceLine
-                          y={goal}
+                          y={0}
                           stroke="hsl(var(--destructive))"
                           strokeWidth={2}
                           strokeDasharray="4 4"
@@ -818,16 +1227,14 @@ export default function EpargnePage() {
                         isAnimationActive={true}
                         connectNulls={false}
                       />
-                      {goal > 0 &&
-                        monthGoalReachedFromChart != null &&
-                        monthGoalReachedFromChart > 0 && (
+                      {false && (
                           <ReferenceLine
-                            x={monthGoalReachedFromChart}
+                            x={0}
                             stroke="rgba(255, 255, 255, 0.85)"
                             strokeWidth={2.5}
                             strokeDasharray="6 6"
                             label={{
-                              value: `Objectif (${formatMonthAxisLabel(monthGoalReachedFromChart)})`,
+                              value: "Objectif",
                               position: "insideTopRight",
                               fill: "hsl(var(--muted-foreground))",
                               fontSize: 11,
@@ -896,6 +1303,42 @@ export default function EpargnePage() {
               onClick={() => {
                 if (confirmDeleteIndex != null)
                   removeAccount(confirmDeleteIndex);
+              }}
+            >
+              Supprimer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={confirmDeleteObjectiveIndex != null}
+        onOpenChange={(open) =>
+          !open && setConfirmDeleteObjectiveIndex(null)
+        }
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer cet objectif ?</DialogTitle>
+            <DialogDescription>
+              L&apos;objectif &quot;
+              {confirmDeleteObjectiveIndex != null &&
+                savingsObjectives[confirmDeleteObjectiveIndex]?.name}
+              &quot; sera supprimé. Les comptes épargne ne sont pas supprimés.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setConfirmDeleteObjectiveIndex(null)}
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (confirmDeleteObjectiveIndex != null)
+                  removeObjective(confirmDeleteObjectiveIndex);
               }}
             >
               Supprimer

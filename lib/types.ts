@@ -232,7 +232,7 @@ export const DEFAULT_PLACEMENT_ALLOCATION: PlacementAllocation[] = [
 /** Fréquence de capitalisation des intérêts (selon la banque) */
 export type InterestFrequency = "daily" | "weekly" | "monthly" | "annual";
 
-/** Compte épargne (ex. Sécurité) avec taux annuel et solde actuel */
+/** Compte épargne (ex. Livret A, Livret Jeune) : taux, plafond, solde. Pas d'objectif sur le compte. */
 export interface SavingsAccount {
   name: string;
   /** Taux d'intérêt annuel en % (ex. 3.75) */
@@ -243,17 +243,40 @@ export interface SavingsAccount {
   allocationPercent?: number;
   /** Solde actuel en € */
   currentBalance?: number;
-  /** Objectif en € (optionnel ; pour Sécurité = 6 mois de dépenses) */
+  /** Plafond en € (0 = pas de plafond) */
+  plafond?: number;
+}
+
+/** Objectif d'épargne (ex. Sécurité) : regroupe des comptes et a un montant cible. */
+export interface SavingsObjective {
+  name: string;
+  /** Montant cible en € (pour Sécurité = 6 mois de dépenses, calculé côté UI si locked) */
   goalAmount?: number;
+  /** Verrouillé : ne peut pas être supprimé ni modifié (ex. Sécurité) */
+  locked?: boolean;
+  /** Noms des comptes épargne qui contribuent à cet objectif */
+  accountNames: string[];
 }
 
 export const DEFAULT_SAVINGS_ACCOUNTS: SavingsAccount[] = [
   {
-    name: "Sécurité",
+    name: "Livret A",
     ratePercent: 3.75,
     interestFrequency: "daily",
     allocationPercent: 100,
-    currentBalance: 0,
+    currentBalance: 1300,
+    plafond: 22950,
+  },
+];
+
+export const SÉCURITÉ_OBJECTIVE_NAME = "Sécurité";
+
+export const DEFAULT_SAVINGS_OBJECTIVES: SavingsObjective[] = [
+  {
+    name: SÉCURITÉ_OBJECTIVE_NAME,
+    goalAmount: 0,
+    locked: true,
+    accountNames: ["Livret A"],
   },
 ];
 
@@ -309,6 +332,7 @@ export interface Profile {
   expense_group_names?: string[];
   placement_allocation?: PlacementAllocation[];
   savings_accounts?: SavingsAccount[];
+  savings_objectives?: SavingsObjective[];
   /** Lignes Actions dans le PEA (solde = somme quantité × prix) */
   pea_actions?: PEAHolding[];
   /** Lignes ETF dans le PEA */
@@ -326,6 +350,7 @@ export interface ProfileUpdate {
   expense_group_names?: string[];
   placement_allocation?: PlacementAllocation[];
   savings_accounts?: SavingsAccount[];
+  savings_objectives?: SavingsObjective[];
   pea_actions?: PEAHolding[];
   pea_etfs?: PEAHolding[];
 }

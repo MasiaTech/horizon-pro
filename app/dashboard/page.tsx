@@ -15,6 +15,7 @@ import {
   getExpenseAmount,
   getIncomeAmount,
   getPEAHoldingValue,
+  SÉCURITÉ_OBJECTIVE_NAME,
 } from "@/lib/types";
 import { useProfileContext } from "@/components/ProfileProvider";
 import {
@@ -41,6 +42,7 @@ export default function DashboardPage() {
     placementAllocation,
     setPlacementAllocation,
     savingsAccounts,
+    savingsObjectives,
     peaActions,
     peaEtfs,
     saveProfile,
@@ -516,7 +518,7 @@ export default function DashboardPage() {
                   <div>
                     <CardTitle>Épargne</CardTitle>
                     <CardDescription>
-                      Détail de chaque compte épargne (solde et objectif si défini).
+                      Objectifs et comptes (solde par objectif, objectif si défini).
                     </CardDescription>
                   </div>
                   <Link
@@ -529,23 +531,35 @@ export default function DashboardPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                {savingsAccounts.length > 0 ? (
-                  <ul className="space-y-2 text-sm text-muted-foreground">
-                    {savingsAccounts.map((acc, i) => {
-                      const balance = Number(acc.currentBalance) || 0;
-                      const isSecurite = acc.name.trim() === "Sécurité";
+                <p className="text-2xl font-bold tabular-nums">
+                  {epargneTotal.toLocaleString("fr-FR", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}{" "}
+                  €
+                </p>
+                {savingsObjectives.length > 0 ? (
+                  <ul className="mt-3 space-y-1.5 border-t border-border pt-3 text-sm text-muted-foreground">
+                    {savingsObjectives.map((obj, i) => {
+                      const accountNames = new Set(
+                        (obj.accountNames ?? []).map((n) => n.trim()).filter(Boolean),
+                      );
+                      const balance = savingsAccounts
+                        .filter((a) => accountNames.has(a.name.trim()))
+                        .reduce((s, a) => s + (Number(a.currentBalance) || 0), 0);
+                      const isSecurite = obj.name.trim() === SÉCURITÉ_OBJECTIVE_NAME;
                       const goal =
                         isSecurite
                           ? 6 * totalExpenses
-                          : (acc.goalAmount != null ? Number(acc.goalAmount) : 0);
+                          : (obj.goalAmount != null ? Number(obj.goalAmount) : 0);
                       const showGoal = goal > 0;
                       return (
                         <li
-                          key={`${acc.name}-${i}`}
+                          key={`${obj.name}-${i}`}
                           className="flex justify-between gap-2 border-b border-border pb-2 last:border-0 last:pb-0"
                         >
                           <span className="font-medium text-foreground">
-                            {acc.name}
+                            {obj.name}
                           </span>
                           <span className="tabular-nums text-foreground">
                             {balance.toLocaleString("fr-FR", {
@@ -573,7 +587,7 @@ export default function DashboardPage() {
                   </ul>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Aucun compte épargne configuré.
+                    Aucun objectif épargne configuré.
                   </p>
                 )}
               </CardContent>
