@@ -669,6 +669,7 @@ export default function PEAPage() {
   const {
     loading,
     incomeSources,
+    incomeGroupNames,
     expenseCategories,
     placementAllocation,
     peaActions,
@@ -688,7 +689,7 @@ export default function PEAPage() {
     0,
   );
   const totalExpenses = expenseCategories.reduce(
-    (sum, c) => sum + getExpenseAmount(c, totalIncome, incomeSources),
+    (sum, c) => sum + getExpenseAmount(c, totalIncome, incomeSources, incomeGroupNames),
     0,
   );
   const resteAInvestir = totalIncome - totalExpenses;

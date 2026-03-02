@@ -39,10 +39,10 @@ export default function DashboardSidebar() {
   const [user, setUser] = useState<User | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const { loading, incomeSources, expenseCategories } = useProfileContext();
+  const { loading, incomeSources, expenseCategories, incomeGroupNames } = useProfileContext();
   const totalIncome = incomeSources.reduce((sum, s) => sum + getIncomeAmount(s), 0);
   const totalExpenses = expenseCategories.reduce(
-    (sum, c) => sum + getExpenseAmount(c, totalIncome, incomeSources),
+    (sum, c) => sum + getExpenseAmount(c, totalIncome, incomeSources, incomeGroupNames),
     0,
   );
   const resteAInvestir = totalIncome - totalExpenses;

@@ -76,7 +76,7 @@ export default function DashboardPage() {
     0,
   );
   const totalExpenses = expenseCategories.reduce(
-    (sum, c) => sum + getExpenseAmount(c, totalIncome, incomeSources),
+    (sum, c) => sum + getExpenseAmount(c, totalIncome, incomeSources, incomeGroupNames),
     0,
   );
   const resteAInvestir = totalIncome - totalExpenses;
@@ -99,7 +99,7 @@ export default function DashboardPage() {
     amount: expenseCategories
       .filter((c) => (c.group ?? expenseGroupNames[0]) === groupName)
       .reduce(
-        (sum, c) => sum + getExpenseAmount(c, totalIncome, incomeSources),
+        (sum, c) => sum + getExpenseAmount(c, totalIncome, incomeSources, incomeGroupNames),
         0,
       ),
   }));

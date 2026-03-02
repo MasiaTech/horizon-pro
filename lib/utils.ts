@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-/** Affiche un nombre pour un input : vide si 0, sinon virgule comme décimal */
+/** Affiche un nombre pour un input : vide par défaut (0 → ""), virgule comme décimal. Permet de saisir 0 (enregistré). */
 export function formatNumberForInput(n: number | undefined | null): string {
   if (n === undefined || n === null) return ""
   if (Number(n) === 0) return ""

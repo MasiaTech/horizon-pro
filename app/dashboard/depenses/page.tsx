@@ -266,7 +266,9 @@ function SortableExpenseRow({
   globalIndex,
   totalIncome,
   incomeSources,
+  incomeGroupNames,
   percentageRefOptions,
+  showReferenceColumn,
   onUpdate,
   onRequestRemove,
 }: {
@@ -274,7 +276,9 @@ function SortableExpenseRow({
   globalIndex: number;
   totalIncome: number;
   incomeSources: IncomeSource[];
+  incomeGroupNames: string[];
   percentageRefOptions: PercentageRefOption[];
+  showReferenceColumn: boolean;
   onUpdate: (index: number, field: keyof ExpenseCategory, value: string | number) => void;
   onRequestRemove: (index: number, expense: ExpenseCategory) => void;
 }) {
@@ -310,7 +314,9 @@ function SortableExpenseRow({
         globalIndex={globalIndex}
         totalIncome={totalIncome}
         incomeSources={incomeSources}
+        incomeGroupNames={incomeGroupNames}
         percentageRefOptions={percentageRefOptions}
+        showReferenceColumn={showReferenceColumn}
         onUpdate={onUpdate}
         onRequestRemove={onRequestRemove}
       />
@@ -327,7 +333,9 @@ function ExpenseRowCells({
   globalIndex,
   totalIncome,
   incomeSources,
+  incomeGroupNames,
   percentageRefOptions,
+  showReferenceColumn,
   onUpdate,
   onRequestRemove,
 }: {
@@ -335,7 +343,9 @@ function ExpenseRowCells({
   globalIndex: number;
   totalIncome: number;
   incomeSources: IncomeSource[];
+  incomeGroupNames: string[];
   percentageRefOptions: PercentageRefOption[];
+  showReferenceColumn: boolean;
   onUpdate: (index: number, field: keyof ExpenseCategory, value: string | number) => void;
   onRequestRemove: (index: number, expense: ExpenseCategory) => void;
 }) {
@@ -409,29 +419,29 @@ function ExpenseRowCells({
           )}
         </div>
       </td>
-      <td className="px-4 py-2">
-        {cat.type === "percentage" ? (
-          <Select
-            value={percentageRefOptions.some((o) => o.value === percentageOfValue) ? percentageOfValue : "total"}
-            onValueChange={(v) => onUpdate(globalIndex, "percentageOf", v)}
-          >
-            <SelectTrigger className="h-9 min-w-[140px] border-0 bg-transparent shadow-none focus:ring-1">
-              <SelectValue placeholder="Référence" />
-            </SelectTrigger>
-            <SelectContent>
-              {percentageRefOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        )}
-      </td>
+      {showReferenceColumn && (
+        <td className="px-4 py-2">
+          {cat.type === "percentage" ? (
+            <Select
+              value={percentageRefOptions.some((o) => o.value === percentageOfValue) ? percentageOfValue : "total"}
+              onValueChange={(v) => onUpdate(globalIndex, "percentageOf", v)}
+            >
+              <SelectTrigger className="h-9 min-w-[140px] border-0 bg-transparent shadow-none focus:ring-1">
+                <SelectValue placeholder="Référence" />
+              </SelectTrigger>
+              <SelectContent>
+                {percentageRefOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
+        </td>
+      )}
       <td className="px-4 py-2 text-right text-muted-foreground">
-        {getExpenseAmount(cat, totalIncome, incomeSources).toLocaleString("fr-FR", {
+        {getExpenseAmount(cat, totalIncome, incomeSources, incomeGroupNames).toLocaleString("fr-FR", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}{" "}
@@ -466,14 +476,18 @@ function DraftRow({
   draft,
   totalIncome,
   incomeSources,
+  incomeGroupNames,
   percentageRefOptions,
+  showReferenceColumn,
   onChange,
   onBlur,
 }: {
   draft: ExpenseCategory;
   totalIncome: number;
   incomeSources: IncomeSource[];
+  incomeGroupNames: string[];
   percentageRefOptions: PercentageRefOption[];
+  showReferenceColumn: boolean;
   onChange: (field: keyof ExpenseCategory, value: string | number) => void;
   onBlur: () => void;
 }) {
@@ -552,29 +566,29 @@ function DraftRow({
           )}
         </div>
       </td>
-      <td className="px-4 py-2">
-        {draft.type === "percentage" ? (
-          <Select
-            value={percentageRefOptions.some((o) => o.value === percentageOfValue) ? percentageOfValue : "total"}
-            onValueChange={(v) => onChange("percentageOf", v)}
-          >
-            <SelectTrigger className="h-9 min-w-[140px] border-0 bg-transparent shadow-none focus:ring-1">
-              <SelectValue placeholder="Référence" />
-            </SelectTrigger>
-            <SelectContent>
-              {percentageRefOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        )}
-      </td>
+      {showReferenceColumn && (
+        <td className="px-4 py-2">
+          {draft.type === "percentage" ? (
+            <Select
+              value={percentageRefOptions.some((o) => o.value === percentageOfValue) ? percentageOfValue : "total"}
+              onValueChange={(v) => onChange("percentageOf", v)}
+            >
+              <SelectTrigger className="h-9 min-w-[140px] border-0 bg-transparent shadow-none focus:ring-1">
+                <SelectValue placeholder="Référence" />
+              </SelectTrigger>
+              <SelectContent>
+                {percentageRefOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
+        </td>
+      )}
       <td className="px-4 py-2 text-right text-muted-foreground">
-        {getExpenseAmount(draft, totalIncome, incomeSources).toLocaleString("fr-FR", {
+        {getExpenseAmount(draft, totalIncome, incomeSources, incomeGroupNames).toLocaleString("fr-FR", {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })}{" "}
@@ -798,7 +812,7 @@ export default function DepensesPage() {
   };
 
   const totalExpenses = expenseCategories.reduce(
-    (sum, c) => sum + getExpenseAmount(c, totalIncome, incomeSources),
+    (sum, c) => sum + getExpenseAmount(c, totalIncome, incomeSources, incomeGroupNames),
     0,
   );
 
@@ -879,9 +893,12 @@ export default function DepensesPage() {
           {expenseGroupNames.map((groupName) => {
             const items = getItemsForGroup(groupName);
             const draft = getDraftForGroup(groupName);
+            const showReferenceColumn =
+              items.some(({ expense }) => expense.type === "percentage") ||
+              draft.type === "percentage";
             const groupTotal = items.reduce(
               (sum, { expense }) =>
-                sum + getExpenseAmount(expense, totalIncome, incomeSources),
+                sum + getExpenseAmount(expense, totalIncome, incomeSources, incomeGroupNames),
               0,
             );
             const rowIds = items.map(({ globalIndex }) => `row-${globalIndex}`);
@@ -925,9 +942,11 @@ export default function DepensesPage() {
                             <th className="px-4 py-3 text-right font-medium">
                               Valeur
                             </th>
-                            <th className="px-4 py-3 text-left font-medium">
-                              Référence
-                            </th>
+                            {showReferenceColumn && (
+                              <th className="px-4 py-3 text-left font-medium">
+                                Référence
+                              </th>
+                            )}
                             <th className="px-4 py-3 text-right font-medium">
                               Montant pris en compte
                             </th>
@@ -946,7 +965,9 @@ export default function DepensesPage() {
                                 globalIndex={globalIndex}
                                 totalIncome={totalIncome}
                                 incomeSources={incomeSources}
+                                incomeGroupNames={incomeGroupNames}
                                 percentageRefOptions={percentageRefOptions}
+                                showReferenceColumn={showReferenceColumn}
                                 onUpdate={handleUpdate}
                                 onRequestRemove={(index, exp) =>
                                   setConfirmDelete({
@@ -962,7 +983,9 @@ export default function DepensesPage() {
                             draft={draft}
                             totalIncome={totalIncome}
                             incomeSources={incomeSources}
+                            incomeGroupNames={incomeGroupNames}
                             percentageRefOptions={percentageRefOptions}
+                            showReferenceColumn={showReferenceColumn}
                             onChange={(field, value) =>
                               handleDraftChange(groupName, field, value)
                             }

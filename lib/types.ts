@@ -92,10 +92,20 @@ export interface ExpenseCategory {
   percentageOf?: string;
 }
 
+/** Groupe effectif d'une source (pour cohérence avec les options Référence : première catégorie si non renseigné) */
+function effectiveGroup(
+  source: IncomeSource,
+  incomeGroupNames: string[] | undefined,
+): string {
+  if (source.group != null && source.group !== "") return source.group;
+  return incomeGroupNames?.[0] ?? "";
+}
+
 /** Retourne le montant de référence pour un % (total, catégorie ou ligne de revenu) */
 export function getPercentageBaseAmount(
   percentageOf: string | undefined,
   incomeSources: IncomeSource[],
+  incomeGroupNames?: string[],
 ): number {
   if (!percentageOf || percentageOf === "total") {
     return incomeSources.reduce((s, i) => s + getIncomeAmount(i), 0);
@@ -103,7 +113,7 @@ export function getPercentageBaseAmount(
   if (percentageOf.startsWith("category:")) {
     const groupName = percentageOf.slice("category:".length);
     return incomeSources
-      .filter((s) => (s.group ?? "") === groupName)
+      .filter((s) => effectiveGroup(s, incomeGroupNames) === groupName)
       .reduce((s, i) => s + getIncomeAmount(i), 0);
   }
   if (percentageOf.startsWith("source:")) {
@@ -112,7 +122,9 @@ export function getPercentageBaseAmount(
     const groupName = sep >= 0 ? rest.slice(0, sep) : "";
     const sourceName = sep >= 0 ? rest.slice(sep + 1) : rest;
     const src = incomeSources.find(
-      (s) => (s.group ?? "") === groupName && s.name === sourceName,
+      (s) =>
+        effectiveGroup(s, incomeGroupNames) === groupName &&
+        (s.name ?? "") === sourceName,
     );
     return src ? getIncomeAmount(src) : 0;
   }
@@ -124,6 +136,7 @@ export function getExpenseAmount(
   cat: ExpenseCategory,
   totalIncome: number,
   incomeSources?: IncomeSource[],
+  incomeGroupNames?: string[],
 ): number {
   switch (cat.type) {
     case "fixed":
@@ -136,7 +149,11 @@ export function getExpenseAmount(
     case "percentage": {
       const base =
         incomeSources != null
-          ? getPercentageBaseAmount(cat.percentageOf, incomeSources)
+          ? getPercentageBaseAmount(
+              cat.percentageOf,
+              incomeSources,
+              incomeGroupNames,
+            )
           : totalIncome;
       return (base * (Number(cat.percentage) || 0)) / 100;
     }
