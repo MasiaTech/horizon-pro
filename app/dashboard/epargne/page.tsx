@@ -32,8 +32,6 @@ import {
   AreaChart,
   CartesianGrid,
   Legend,
-  Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -800,7 +798,7 @@ export default function EpargnePage() {
                     )}
                     <div className="h-[240px] w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart
+                        <AreaChart
                           data={displayData}
                           margin={{
                             top: 16,
@@ -809,6 +807,53 @@ export default function EpargnePage() {
                             bottom: 0,
                           }}
                         >
+                          <defs>
+                            {accountNamesInObjective.map((name, i) => {
+                              const color =
+                                OBJECTIVE_CHART_COLORS[
+                                  i % OBJECTIVE_CHART_COLORS.length
+                                ];
+                              return (
+                                <linearGradient
+                                  key={name}
+                                  id={`fillEpargne-${objIndex}-${name.replace(/\s/g, "-")}`}
+                                  x1="0"
+                                  y1="0"
+                                  x2="0"
+                                  y2="1"
+                                >
+                                  <stop
+                                    offset="5%"
+                                    stopColor={color}
+                                    stopOpacity={0.4}
+                                  />
+                                  <stop
+                                    offset="95%"
+                                    stopColor={color}
+                                    stopOpacity={0}
+                                  />
+                                </linearGradient>
+                              );
+                            })}
+                            <linearGradient
+                              id={`fillEpargne-${objIndex}-total`}
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="5%"
+                                stopColor="hsl(45, 88%, 48%)"
+                                stopOpacity={0.4}
+                              />
+                              <stop
+                                offset="95%"
+                                stopColor="hsl(45, 88%, 48%)"
+                                stopOpacity={0}
+                              />
+                            </linearGradient>
+                          </defs>
                           <CartesianGrid
                             strokeDasharray="3 3"
                             className="stroke-muted"
@@ -884,7 +929,7 @@ export default function EpargnePage() {
                           />
                           <Legend />
                           {accountNamesInObjective.map((name, i) => (
-                            <Line
+                            <Area
                               key={name}
                               type="monotone"
                               dataKey={name}
@@ -895,18 +940,20 @@ export default function EpargnePage() {
                                 ]
                               }
                               strokeWidth={2}
-                              dot={false}
+                              fill={`url(#fillEpargne-${objIndex}-${name.replace(/\s/g, "-")})`}
                               isAnimationActive={true}
+                              connectNulls={false}
                             />
                           ))}
-                          <Line
+                          <Area
                             type="monotone"
                             dataKey="total"
                             name="Total"
                             stroke="hsl(45, 88%, 48%)"
                             strokeWidth={2.5}
-                            dot={false}
+                            fill={`url(#fillEpargne-${objIndex}-total)`}
                             isAnimationActive={true}
+                            connectNulls={false}
                           />
                           {goalAmount > 0 && (
                             <ReferenceLine
@@ -938,7 +985,7 @@ export default function EpargnePage() {
                                 }}
                               />
                             )}
-                        </LineChart>
+                        </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   </>
