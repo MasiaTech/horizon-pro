@@ -266,26 +266,33 @@ export default function DashboardPage() {
           )}
         </DashboardCard>
 
-        {showSimulateurImpot && (
-          <DashboardCard
-            title="Impôt sur le revenu"
-            description={`Estimation selon le barème ${BAREME_META.annee} à partir des revenus indexés.`}
-            iconSrc="/resources/icons/impotrevenus.png"
-            linkHref="/dashboard/simulateur-impot"
-            linkLabel="Simulateur impôt"
-          >
-            <p className="text-3xl font-bold tabular-nums text-foreground">
-              {annualIncomeForTax.toLocaleString("fr-FR", {
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              })}{" "}
-              €
+        <DashboardCard
+          title="Impôt sur le revenu"
+          description={`Estimation selon le barème ${BAREME_META.annee} à partir des revenus indexés.`}
+          iconSrc="/resources/icons/impotrevenus.png"
+          linkHref={showSimulateurImpot ? "/dashboard/simulateur-impot" : undefined}
+          linkLabel={showSimulateurImpot ? "Simulateur impôt" : undefined}
+          dimmed={!showSimulateurImpot}
+        >
+          {showSimulateurImpot ? (
+            <>
+              <p className="text-3xl font-bold tabular-nums text-foreground">
+                {annualIncomeForTax.toLocaleString("fr-FR", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })}{" "}
+                €
+              </p>
+              <p className="mt-3 border-t border-border pt-3 text-sm text-muted-foreground">
+                Revenu annuel pris en compte (× 12)
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Cochez au moins une ligne « Indexé impôt » dans Revenus pour afficher l&apos;estimation et accéder au simulateur.
             </p>
-            <p className="mt-3 border-t border-border pt-3 text-sm text-muted-foreground">
-              Revenu annuel pris en compte (× 12)
-            </p>
-          </DashboardCard>
-        )}
+          )}
+        </DashboardCard>
 
         <DashboardCard
           title="Reste à investir"
