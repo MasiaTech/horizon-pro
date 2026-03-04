@@ -49,14 +49,14 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Si connecté et sur /login ou /register, rediriger vers dashboard
-  if (
-    (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/register') &&
-    user
-  ) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+  // Si connecté : rediriger /, /login et /register vers dashboard
+  if (user) {
+    const path = request.nextUrl.pathname
+    if (path === '/' || path === '/login' || path === '/register') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
   }
 
   return supabaseResponse

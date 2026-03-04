@@ -13,9 +13,11 @@ import type { PlacementAllocation } from "@/lib/types";
 import {
   getExpenseAmount,
   getIncomeAmount,
+  getIncomeAmountForTax,
   getPEAHoldingValue,
   SÉCURITÉ_OBJECTIVE_NAME,
 } from "@/lib/types";
+import { BAREME_META } from "@/lib/impot";
 import { useProfileContext } from "@/components/ProfileProvider";
 import { DashboardCard } from "@/components/DashboardCard";
 import { Input } from "@/components/ui/input";
@@ -83,6 +85,13 @@ export default function DashboardPage() {
     0,
   );
   const resteAInvestir = totalIncome - totalExpenses;
+
+  /** Au moins une ligne de revenu indexée pour l'impôt → afficher card et menu Simulateur impôt */
+  const showSimulateurImpot = incomeSources.some((s) => s.taxIndexed === true);
+  const annualIncomeForTax =
+    incomeSources
+      .filter((s) => s.taxIndexed === true)
+      .reduce((sum, s) => sum + getIncomeAmountForTax(s), 0) * 12;
 
   /** Cartes Placements / PEA / Épargne actives (contenu cliquable) seulement si revenus et dépenses > 0 et reste à investir > 0 */
   const showPlacementsCards =
@@ -256,6 +265,27 @@ export default function DashboardPage() {
             </p>
           )}
         </DashboardCard>
+
+        {showSimulateurImpot && (
+          <DashboardCard
+            title="Impôt sur le revenu"
+            description={`Estimation selon le barème ${BAREME_META.annee} à partir des revenus indexés.`}
+            iconSrc="/resources/icons/impotrevenus.png"
+            linkHref="/dashboard/simulateur-impot"
+            linkLabel="Simulateur impôt"
+          >
+            <p className="text-3xl font-bold tabular-nums text-foreground">
+              {annualIncomeForTax.toLocaleString("fr-FR", {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0,
+              })}{" "}
+              €
+            </p>
+            <p className="mt-3 border-t border-border pt-3 text-sm text-muted-foreground">
+              Revenu annuel pris en compte (× 12)
+            </p>
+          </DashboardCard>
+        )}
 
         <DashboardCard
           title="Reste à investir"

@@ -8,6 +8,8 @@ const TITLES: Record<string, string> = {
   "/dashboard/depenses": "Dépenses",
   "/dashboard/epargne": "Épargne",
   "/dashboard/pea": "PEA",
+  "/dashboard/parametres": "Paramètres",
+  "/dashboard/simulateur-impot": "Simulateur impôt",
 };
 
 /**

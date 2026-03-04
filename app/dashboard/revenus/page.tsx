@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   DndContext,
   closestCenter,
@@ -19,6 +20,7 @@ import { useSortableSensors } from "@/lib/dnd-sensors";
 import type { IncomeAmountType, IncomeSource } from "@/lib/types";
 import { getIncomeAmount } from "@/lib/types";
 import { Plus, X, GripVertical } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -265,7 +267,7 @@ function SortableIncomeRow({
 }: {
   source: IncomeSource;
   globalIndex: number;
-  onUpdate: (index: number, field: keyof IncomeSource & string, value: string | number) => void;
+  onUpdate: (index: number, field: keyof IncomeSource & string, value: string | number | boolean) => void;
   onRequestRemove: (index: number, source: IncomeSource) => void;
 }) {
   const id = `row-${globalIndex}`;
@@ -314,10 +316,12 @@ function IncomeRowCells({
 }: {
   source: IncomeSource;
   globalIndex: number;
-  onUpdate: (index: number, field: keyof IncomeSource & string, value: string | number) => void;
+  onUpdate: (index: number, field: keyof IncomeSource & string, value: string | number | boolean) => void;
   onRequestRemove: (index: number, source: IncomeSource) => void;
 }) {
   const type = source.type ?? "fixed";
+  const hasDeduction = (source.deductionPercent ?? 0) > 0;
+  const showBrutNet = source.taxIndexed && hasDeduction;
   return (
     <>
       <td className="px-4 py-2">
@@ -384,6 +388,36 @@ function IncomeRowCells({
             className="h-9 w-14 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
           />
           <span className="text-muted-foreground">%</span>
+        </div>
+      </td>
+      <td className="px-4 py-2">
+        <div className="flex flex-col items-start gap-1">
+          <label className="flex cursor-pointer items-center gap-2 text-sm">
+            <Checkbox
+              checked={source.taxIndexed === true}
+              onCheckedChange={(checked) =>
+                onUpdate(globalIndex, "taxIndexed", checked === true)
+              }
+              aria-label="Indexé sur l'impôt sur le revenu"
+            />
+            <span className="text-muted-foreground">Indexé impôt</span>
+          </label>
+          {showBrutNet && (
+            <Select
+              value={source.taxBase ?? "net"}
+              onValueChange={(v: "brut" | "net") =>
+                onUpdate(globalIndex, "taxBase", v)
+              }
+            >
+              <SelectTrigger className="h-8 w-full min-w-0 border-0 bg-transparent shadow-none focus:ring-1">
+                <SelectValue placeholder="Base" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="brut">Brut</SelectItem>
+                <SelectItem value="net">Net</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
       </td>
       <td className="px-4 py-2 text-right text-muted-foreground">
@@ -501,6 +535,7 @@ function DraftRow({
           <span className="text-muted-foreground">%</span>
         </div>
       </td>
+      <td className="w-32 px-4 py-2" aria-hidden />
       <td className="px-4 py-2 text-right text-muted-foreground">
         {getIncomeAmount(draft).toLocaleString("fr-FR", {
           minimumFractionDigits: 2,
@@ -606,8 +641,8 @@ export default function RevenusPage() {
 
   const handleUpdate = (
     globalIndex: number,
-    field: "name" | "group" | "type" | "amount" | "min" | "max" | "deductionPercent",
-    value: string | number,
+    field: "name" | "group" | "type" | "amount" | "min" | "max" | "deductionPercent" | "taxIndexed" | "taxBase",
+    value: string | number | boolean,
   ) => {
     updateIncomeSource(setIncomeSources, globalIndex, field, value);
   };
@@ -842,6 +877,12 @@ export default function RevenusPage() {
                       >
                         Déduction %
                       </th>
+                      <th
+                        className="w-32 min-w-[8rem] px-4 py-3 text-left font-medium"
+                        title="Inclure ce revenu dans le simulateur impôt sur le revenu"
+                      >
+                        Indexé impôt
+                      </th>
                       <th className="px-4 py-3 text-right font-medium">
                         Montant pris en compte
                       </th>
@@ -901,6 +942,17 @@ export default function RevenusPage() {
           })}{" "}
           €
         </span>
+        {incomeSources.some((s) => s.taxIndexed === true) && (
+          <>
+            {" · "}
+            <Link
+              href="/dashboard/simulateur-impot"
+              className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+            >
+              Simulateur impôt sur le revenu
+            </Link>
+          </>
+        )}
       </p>
 
       <Dialog

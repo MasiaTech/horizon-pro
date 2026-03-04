@@ -1,0 +1,36 @@
+{
+  "annee": 2025,
+  "label": "Barème progressif applicable aux revenus 2025",
+  "tranches": [
+    {
+      "min": 0,
+      "max": 11600,
+      "taux": 0,
+      "label": "Jusqu'à 11 600 €"
+    },
+    {
+      "min": 11601,
+      "max": 29579,
+      "taux": 11,
+      "label": "De 11 601 € à 29 579 €"
+    },
+    {
+      "min": 29580,
+      "max": 84577,
+      "taux": 30,
+      "label": "De 29 580 € à 84 577 €"
+    },
+    {
+      "min": 84578,
+      "max": 181917,
+      "taux": 41,
+      "label": "De 84 578 € à 181 917 €"
+    },
+    {
+      "min": 181918,
+      "max": null,
+      "taux": 45,
+      "label": "Plus de 181 917 €"
+    }
+  ]
+}

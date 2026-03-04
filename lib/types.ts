@@ -5,6 +5,9 @@
 /** Type de montant pour une source de revenu (fixe ou fourchette min-max) */
 export type IncomeAmountType = "fixed" | "range";
 
+/** Base pour le simulateur d'impôt : brut (avant déduction) ou net (après déduction %) */
+export type IncomeTaxBase = "brut" | "net";
+
 /** Une source de revenu (ex. Salaire, Freelance) */
 export interface IncomeSource {
   name: string;
@@ -20,6 +23,10 @@ export interface IncomeSource {
   max?: number;
   /** Pourcentage à déduire du montant (ex. 25 pour URSSAF auto-entrepreneur), optionnel */
   deductionPercent?: number;
+  /** Si true, ce revenu est inclus dans le simulateur impôt sur le revenu */
+  taxIndexed?: boolean;
+  /** Pour le simulateur IR : brut ou net (pertinent si deductionPercent renseigné) */
+  taxBase?: IncomeTaxBase;
 }
 
 /** Calcule le montant effectif d'une source (brut puis moins déduction % si renseignée) */
@@ -54,6 +61,9 @@ export function normalizeIncomeSource(
       max: raw.max != null ? Number(raw.max) : undefined,
       deductionPercent:
         raw.deductionPercent != null ? Number(raw.deductionPercent) : undefined,
+      taxIndexed: raw.taxIndexed === true,
+      taxBase:
+        raw.taxBase === "brut" || raw.taxBase === "net" ? raw.taxBase : undefined,
     };
   }
   return {
@@ -62,7 +72,21 @@ export function normalizeIncomeSource(
     amount: raw.amount != null ? Number(raw.amount) : 0,
     deductionPercent:
       raw.deductionPercent != null ? Number(raw.deductionPercent) : undefined,
+    taxIndexed: raw.taxIndexed === true,
+    taxBase:
+      raw.taxBase === "brut" || raw.taxBase === "net" ? raw.taxBase : undefined,
   };
+}
+
+/** Montant mensuel pris en compte pour l'impôt sur le revenu (sources indexées uniquement). */
+export function getIncomeAmountForTax(source: IncomeSource): number {
+  if (!source.taxIndexed) return 0;
+  const raw =
+    source.type === "range"
+      ? ((Number(source.min) || 0) + (Number(source.max) || 0)) / 2
+      : Number(source.amount) || 0;
+  if (source.taxBase === "brut" && (source.deductionPercent ?? 0) > 0) return raw;
+  return getIncomeAmount(source);
 }
 
 /** Type de montant pour une dépense */

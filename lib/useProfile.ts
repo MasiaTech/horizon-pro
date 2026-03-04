@@ -384,8 +384,17 @@ export function useProfile(autoSaveDelayMs = 600) {
 export function updateIncomeSource(
   setIncomeSources: React.Dispatch<React.SetStateAction<IncomeSource[]>>,
   index: number,
-  field: "name" | "group" | "type" | "amount" | "min" | "max" | "deductionPercent",
-  value: string | number,
+  field:
+    | "name"
+    | "group"
+    | "type"
+    | "amount"
+    | "min"
+    | "max"
+    | "deductionPercent"
+    | "taxIndexed"
+    | "taxBase",
+  value: string | number | boolean,
 ) {
   setIncomeSources((prev) => {
     const next = [...prev];
@@ -413,6 +422,14 @@ export function updateIncomeSource(
           value === "" || value == null || Number(value) === 0
             ? undefined
             : Number(value) || 0,
+      };
+    else if (field === "taxIndexed")
+      next[index] = { ...cur, taxIndexed: value === true };
+    else if (field === "taxBase")
+      next[index] = {
+        ...cur,
+        taxBase:
+          value === "brut" || value === "net" ? value : undefined,
       };
     return next;
   });
