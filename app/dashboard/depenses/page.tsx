@@ -20,6 +20,7 @@ import type {
   IncomeSource,
 } from "@/lib/types";
 import { getExpenseAmount, getIncomeAmount } from "@/lib/types";
+import { clampPercent } from "@/lib/utils";
 import { useProfileContext } from "@/components/ProfileProvider";
 import { updateExpenseCategory } from "@/lib/useProfile";
 import { useSortableSensors } from "@/lib/dnd-sensors";
@@ -411,7 +412,7 @@ function ExpenseRowCells({
             <>
               <NumberInput
                 value={cat.percentage ?? 0}
-                onChange={(n) => onUpdate(globalIndex, "percentage", n)}
+                onChange={(n) => onUpdate(globalIndex, "percentage", clampPercent(n))}
                 placeholder="%"
                 className="h-9 w-14 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
               />
@@ -557,7 +558,7 @@ function DraftRow({
             <>
               <NumberInput
                 value={draft.percentage ?? 0}
-                onChange={(n) => onChange("percentage", n)}
+                onChange={(n) => onChange("percentage", clampPercent(n))}
                 onBlur={onBlur}
                 placeholder="%"
                 className="h-9 w-14 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
@@ -760,7 +761,7 @@ export default function DepensesPage() {
       } else if (field === "amount") next.amount = Number(value) || 0;
       else if (field === "min") next.min = Number(value) || 0;
       else if (field === "max") next.max = Number(value) || 0;
-      else if (field === "percentage") next.percentage = Number(value) || 0;
+      else if (field === "percentage") next.percentage = clampPercent(Number(value) || 0);
       else if (field === "percentageOf") next.percentageOf = String(value);
       return next;
     });

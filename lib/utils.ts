@@ -29,3 +29,8 @@ export function parseNumberInput(s: string): number {
   const n = parseFloat(s.replace(",", "."))
   return Number.isNaN(n) ? 0 : n
 }
+
+/** Contraint un pourcentage entre 0 et 100 (dépenses %, répartition, épargne taux, PEA dividendes/ROE). */
+export function clampPercent(n: number): number {
+  return Math.max(0, Math.min(100, Number(n) || 0))
+}

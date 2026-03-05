@@ -13,6 +13,7 @@ import type {
   SavingsObjective,
   PEAHolding,
 } from "@/lib/types";
+import { clampPercent } from "@/lib/utils";
 import {
   DEFAULT_INCOME_SOURCES,
   DEFAULT_INCOME_GROUP_NAMES,
@@ -200,7 +201,10 @@ export function useProfile(autoSaveDelayMs = 600) {
     const placements = (data as Profile).placement_allocation;
     setPlacementAllocation(
       Array.isArray(placements) && placements.length > 0
-        ? (placements as PlacementAllocation[])
+        ? (placements as PlacementAllocation[]).map((p) => ({
+            ...p,
+            percentage: clampPercent(p.percentage),
+          }))
         : DEFAULT_PLACEMENT_ALLOCATION,
     );
     const savings = (data as Profile).savings_accounts;
@@ -214,10 +218,10 @@ export function useProfile(autoSaveDelayMs = 600) {
         const name = rawName.trim() === "Sécurité" ? "Livret A" : rawName;
         return {
         name,
-        ratePercent: Number(a.ratePercent) ?? 0,
+        ratePercent: clampPercent(Number(a.ratePercent) ?? 0),
         interestFrequency: validFreq(a.interestFrequency) as SavingsAccount["interestFrequency"],
         allocationPercent:
-          a.allocationPercent != null ? Number(a.allocationPercent) : i === 0 ? 100 : 0,
+          a.allocationPercent != null ? clampPercent(Number(a.allocationPercent)) : i === 0 ? 100 : 0,
         currentBalance: a.currentBalance != null ? Number(a.currentBalance) : 0,
         plafond: a.plafond != null ? Number(a.plafond) : 0,
       };
@@ -421,7 +425,7 @@ export function updateIncomeSource(
         deductionPercent:
           value === "" || value == null || Number(value) === 0
             ? undefined
-            : Number(value) || 0,
+            : clampPercent(Number(value) || 0),
       };
     else if (field === "taxIndexed")
       next[index] = { ...cur, taxIndexed: value === true };
@@ -450,8 +454,8 @@ export function updatePEAHolding(
     else if (field === "quantity") next[index] = { ...cur, quantity: Number(value) || 0 };
     else if (field === "price") next[index] = { ...cur, price: Number(value) || 0 };
     else if (field === "dividendEnabled") next[index] = { ...cur, dividendEnabled: Boolean(value) };
-    else if (field === "dividendPercentPerYear") next[index] = { ...cur, dividendPercentPerYear: value === "" || value == null ? undefined : Number(value) || 0 };
-    else if (field === "roePercent") next[index] = { ...cur, roePercent: value === "" || value == null ? undefined : Number(value) || 0 };
+    else if (field === "dividendPercentPerYear") next[index] = { ...cur, dividendPercentPerYear: value === "" || value == null ? undefined : clampPercent(Number(value) || 0) };
+    else if (field === "roePercent") next[index] = { ...cur, roePercent: value === "" || value == null ? undefined : clampPercent(Number(value) || 0) };
     return next;
   });
 }
@@ -500,7 +504,7 @@ export function updateExpenseCategory(
     else if (field === "max")
       next[index] = { ...cur, max: Number(value) || 0 };
     else if (field === "percentage")
-      next[index] = { ...cur, percentage: Number(value) || 0 };
+      next[index] = { ...cur, percentage: clampPercent(Number(value) || 0) };
     return next;
   });
 }

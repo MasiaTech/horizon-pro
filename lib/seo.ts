@@ -1,5 +1,5 @@
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://horizon-pro-pi.vercel.app/";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://mon-horizon.fr/";
 
 export const SITE_NAME = "Horizon";
 
@@ -7,12 +7,15 @@ export const DEFAULT_TITLE =
   "Horizon — Dashboard stratégique vers l'indépendance financière";
 
 export const DEFAULT_DESCRIPTION =
-  "Visualisez combien il vous reste à investir chaque mois. Revenus, dépenses, épargne et PEA en un seul endroit. Simulation intérêts composés, projection PEA 150k€, répartition automatique.";
+  "Outil pour salariés, particuliers et freelances en France. Visualisez votre reste à investir, simulez l'impôt sur le revenu, projetez votre PEA et votre épargne. Revenus, dépenses, simulateur impôt, épargne et PEA en un seul endroit.";
 
 export const KEYWORDS = [
   "liberté financière",
   "indépendance financière",
-  "gestion budget",
+  "simulateur impôt sur le revenu",
+  "impôt revenus France",
+  "salarié freelance particulier",
+  "gestion budget France",
   "reste à investir",
   "PEA",
   "épargne",

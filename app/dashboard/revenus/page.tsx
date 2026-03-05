@@ -19,6 +19,7 @@ import { updateIncomeSource } from "@/lib/useProfile";
 import { useSortableSensors } from "@/lib/dnd-sensors";
 import type { IncomeAmountType, IncomeSource } from "@/lib/types";
 import { getIncomeAmount } from "@/lib/types";
+import { clampPercent } from "@/lib/utils";
 import { Plus, X, GripVertical } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -383,7 +384,7 @@ function IncomeRowCells({
         <div className="flex items-center justify-end gap-1">
           <NumberInput
             value={source.deductionPercent ?? 0}
-            onChange={(n) => onUpdate(globalIndex, "deductionPercent", n)}
+            onChange={(n) => onUpdate(globalIndex, "deductionPercent", clampPercent(n))}
             placeholder="0"
             className="h-9 w-14 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
           />
@@ -527,7 +528,7 @@ function DraftRow({
         <div className="flex items-center justify-end gap-1">
           <NumberInput
             value={draft.deductionPercent ?? 0}
-            onChange={(n) => onChange("deductionPercent", n)}
+            onChange={(n) => onChange("deductionPercent", clampPercent(n))}
             onBlur={onBlur}
             placeholder="0"
             className="h-9 w-14 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
@@ -678,7 +679,7 @@ export default function RevenusPage() {
         next.deductionPercent =
           value === "" || value == null || Number(value) === 0
             ? undefined
-            : Number(value) || 0;
+            : clampPercent(Number(value) || 0);
       return next;
     });
   };

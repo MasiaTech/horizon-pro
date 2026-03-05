@@ -16,6 +16,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { useProfileContext } from "@/components/ProfileProvider";
 import { useSortableSensors } from "@/lib/dnd-sensors";
+import { clampPercent } from "@/lib/utils";
 import type {
   InterestFrequency,
   SavingsAccount,
@@ -456,14 +457,14 @@ export default function EpargnePage() {
       const cur = next[index];
       if (field === "name") next[index] = { ...cur, name: String(value) };
       else if (field === "ratePercent")
-        next[index] = { ...cur, ratePercent: Number(value) || 0 };
+        next[index] = { ...cur, ratePercent: clampPercent(Number(value) || 0) };
       else if (field === "interestFrequency")
         next[index] = {
           ...cur,
           interestFrequency: value as InterestFrequency,
         };
       else if (field === "allocationPercent") {
-        const pct = Math.max(0, Math.min(100, Number(value) || 0));
+        const pct = clampPercent(Number(value) || 0);
         next[index] = { ...cur, allocationPercent: pct };
         const lastIndex = next.length - 1;
         const adjustedIndex = index === lastIndex ? 0 : lastIndex;

@@ -28,6 +28,7 @@ import {
 import { useProfileContext } from "@/components/ProfileProvider";
 import { updatePEAHolding } from "@/lib/useProfile";
 import { useSortableSensors } from "@/lib/dnd-sensors";
+import { clampPercent } from "@/lib/utils";
 import {
   getExpenseAmount,
   getIncomeAmount,
@@ -290,7 +291,7 @@ function SortableHoldingRow({
           <NumberInput
             value={h.dividendPercentPerYear ?? 0}
             onChange={(n) =>
-              updatePEAHolding(setItems, index, "dividendPercentPerYear", n)
+              updatePEAHolding(setItems, index, "dividendPercentPerYear", clampPercent(n))
             }
             placeholder="0"
             className="h-9 w-16 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
@@ -302,7 +303,7 @@ function SortableHoldingRow({
           <NumberInput
             value={h.roePercent ?? 0}
             onChange={(n) =>
-              updatePEAHolding(setItems, index, "roePercent", n)
+              updatePEAHolding(setItems, index, "roePercent", clampPercent(n))
             }
             placeholder="0"
             className="h-9 w-16 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
@@ -372,10 +373,10 @@ function HoldingsTable({
         next.dividendEnabled = Boolean(value);
       else if (field === "dividendPercentPerYear")
         next.dividendPercentPerYear =
-          value === "" || value == null ? undefined : Number(value) || 0;
+          value === "" || value == null ? undefined : clampPercent(Number(value) || 0);
       else if (field === "roePercent")
         next.roePercent =
-          value === "" || value == null ? undefined : Number(value) || 0;
+          value === "" || value == null ? undefined : clampPercent(Number(value) || 0);
       return next;
     });
   };
@@ -571,7 +572,7 @@ function HoldingsTable({
                       <NumberInput
                         value={draft.dividendPercentPerYear ?? 0}
                         onChange={(n) =>
-                          handleDraftChange("dividendPercentPerYear", n)
+                          handleDraftChange("dividendPercentPerYear", clampPercent(n))
                         }
                         onBlur={handleDraftBlur}
                         placeholder="0"
@@ -583,7 +584,7 @@ function HoldingsTable({
                     <div className="flex justify-end">
                       <NumberInput
                         value={draft.roePercent ?? 0}
-                        onChange={(n) => handleDraftChange("roePercent", n)}
+                        onChange={(n) => handleDraftChange("roePercent", clampPercent(n))}
                         onBlur={handleDraftBlur}
                         placeholder="0"
                         className="h-9 w-16 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"

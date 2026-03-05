@@ -12,6 +12,7 @@ import {
   Zap,
   Users,
   Briefcase,
+  Calculator,
 } from "lucide-react";
 import { SITE_URL } from "@/lib/seo";
 import type { Metadata } from "next";
@@ -19,11 +20,11 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Horizon — Liberté financière et stratégie d'investissement",
   description:
-    "Prenez le contrôle de votre liberté financière. Visualisez combien il vous reste à investir chaque mois. Revenus, dépenses, épargne, PEA : un dashboard pour transformer votre budget en stratégie.",
+    "Outil pour salariés, particuliers et freelances en France. Simulateur impôt sur le revenu, reste à investir, épargne et PEA. Revenus, dépenses, projection : un dashboard pour transformer votre budget en stratégie.",
   openGraph: {
-    title: "Horizon — Prenez le contrôle de votre liberté financière",
+    title: "Horizon — Liberté financière pour salariés, particuliers et freelances (France)",
     description:
-      "Visualisez combien il vous reste à investir chaque mois. Revenus, dépenses, épargne et PEA en un seul dashboard.",
+      "Simulateur impôt sur le revenu, reste à investir, épargne et PEA. Un seul dashboard pour visualiser et projeter vos finances en France.",
     url: SITE_URL,
   },
   alternates: { canonical: SITE_URL },
@@ -38,7 +39,7 @@ const jsonLd = {
       name: "Horizon",
       url: SITE_URL,
       description:
-        "Dashboard stratégique vers l'indépendance financière. Revenus, dépenses, épargne et PEA centralisés.",
+        "Outil de liberté financière pour salariés, particuliers et freelances en France. Dashboard, simulateur impôt sur le revenu, épargne et PEA.",
     },
     {
       "@type": "WebApplication",
@@ -46,7 +47,7 @@ const jsonLd = {
       name: "Horizon",
       url: SITE_URL,
       description:
-        "Application web pour visualiser son reste à investir, simuler l'épargne avec intérêts composés et projeter son PEA jusqu'à 150 000 €.",
+        "Application web pour la France : simulateur impôt sur le revenu (barème progressif), visualisation du reste à investir, simulation épargne avec intérêts composés et projection PEA jusqu'à 150 000 €.",
       applicationCategory: "FinanceApplication",
       operatingSystem: "Any",
       offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
@@ -86,8 +87,9 @@ export default function HomePage() {
             Visualisez combien il vous reste vraiment à investir chaque mois.
           </p>
           <p className="mt-3 max-w-2xl mx-auto text-base text-muted-foreground/90">
-            Horizon centralise vos revenus, vos dépenses, votre épargne et votre
-            PEA pour transformer votre budget en stratégie d&apos;investissement.
+            Pour salariés, particuliers et freelances en France. Horizon centralise
+            vos revenus, vos dépenses, le simulateur d&apos;impôt sur le revenu, votre
+            épargne et votre PEA pour transformer votre budget en stratégie.
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Button asChild size="lg" className="text-base">
@@ -137,21 +139,37 @@ export default function HomePage() {
           <h2 className="text-center text-2xl font-semibold text-foreground sm:text-3xl">
             Comment Horizon vous aide
           </h2>
-          <div className="mt-12 grid gap-8 sm:grid-cols-3">
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm">
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/15 text-primary">
                 <Wallet className="size-7" />
               </div>
               <h3 className="mt-4 text-lg font-semibold text-foreground">
-                Revenus & Dépenses maîtrisés
+                Revenus & Dépenses
               </h3>
               <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
                 <li>Revenus fixes ou variables</li>
-                <li>Dépenses fixes, fourchettes ou % dynamiques</li>
+                <li>Dépenses fixes, fourchettes ou %</li>
                 <li>Sauvegarde automatique</li>
               </ul>
               <p className="mt-4 text-sm font-medium text-primary">
-                Vous savez exactement combien il vous reste chaque mois.
+                Vous savez combien il vous reste chaque mois.
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+              <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/15 text-primary">
+                <Calculator className="size-7" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold text-foreground">
+                Simulateur impôt sur le revenu
+              </h3>
+              <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+                <li>Barème progressif à jour</li>
+                <li>Estimation selon vos revenus indexés</li>
+                <li>Conseils d&apos;optimisation</li>
+              </ul>
+              <p className="mt-4 text-sm font-medium text-primary">
+                Anticipez votre impôt en France.
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm">
@@ -162,13 +180,12 @@ export default function HomePage() {
                 Projection intelligente
               </h3>
               <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                <li>Simulation épargne avec intérêts composés</li>
+                <li>Simulation épargne (intérêts composés)</li>
                 <li>Projection PEA avec dividendes + ROE</li>
                 <li>Courbes brut / net</li>
-                <li>Temps avant plafond</li>
               </ul>
               <p className="mt-4 text-sm font-medium text-primary">
-                Vous ne suivez pas le passé. Vous projetez l&apos;avenir.
+                Vous projetez l&apos;avenir.
               </p>
             </div>
             <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm">
@@ -179,9 +196,9 @@ export default function HomePage() {
                 Objectifs concrets
               </h3>
               <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                <li>Épargne de précaution (6 mois de dépenses)</li>
+                <li>Épargne de précaution (6 mois)</li>
                 <li>Atteindre les 150 000 € du PEA</li>
-                <li>Répartition stratégique automatique</li>
+                <li>Répartition Épargne / PEA</li>
               </ul>
               <p className="mt-4 text-sm font-medium text-primary">
                 Chaque euro a une destination.
@@ -203,6 +220,7 @@ export default function HomePage() {
           <ul className="mt-8 space-y-4">
             {[
               "Dashboard synthétique clair",
+              "Simulateur impôt sur le revenu (barème progressif France)",
               "Calcul automatique du reste à investir",
               "Répartition Épargne / PEA dynamique",
               "Simulation avancée intérêts composés",
@@ -312,12 +330,15 @@ export default function HomePage() {
           <h2 className="text-center text-2xl font-semibold text-foreground sm:text-3xl">
             À qui s&apos;adresse Horizon ?
           </h2>
+          <p className="mt-3 text-center text-muted-foreground">
+            Un outil pensé pour la France : salariés, particuliers et freelances.
+          </p>
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
             {[
-              { icon: Briefcase, text: "Indépendants / freelances" },
+              { icon: Briefcase, text: "Freelances et indépendants" },
               { icon: TrendingUp, text: "Salariés qui veulent investir intelligemment" },
-              { icon: Target, text: "Personnes qui visent l'indépendance financière" },
-              { icon: BarChart3, text: "Ceux qui veulent comprendre leur vrai cashflow" },
+              { icon: Users, text: "Particuliers qui gèrent leur budget" },
+              { icon: BarChart3, text: "Tous ceux qui visent l'indépendance financière" },
             ].map(({ icon: Icon, text }) => (
               <div
                 key={text}
@@ -331,8 +352,12 @@ export default function HomePage() {
             ))}
           </div>
           <p className="mt-8 text-center text-lg font-medium text-foreground">
-            Dashboard stratégique vers l&apos;indépendance financière — pas une
-            simple application de gestion de budget.
+            Dashboard, simulateur impôt et projections — pour construire votre
+            liberté financière en France. Disponible sur{" "}
+            <a href="https://mon-horizon.fr" className="text-primary underline hover:no-underline">
+              mon-horizon.fr
+            </a>
+            .
           </p>
         </div>
       </section>
