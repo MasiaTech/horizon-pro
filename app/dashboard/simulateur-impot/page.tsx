@@ -69,7 +69,7 @@ export default function SimulateurImpotPage() {
   }
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-6 p-4 sm:space-y-8 sm:p-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">
           Simulateur impôt sur le revenu

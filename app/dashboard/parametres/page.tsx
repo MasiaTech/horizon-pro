@@ -72,7 +72,7 @@ export default function ParametresPage() {
     "—";
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8 p-4 sm:p-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Paramètres</h1>
         <p className="mt-1 text-sm text-muted-foreground">

@@ -192,16 +192,17 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-full w-full p-6">
-      <div className="grid gap-8 lg:grid-cols-2">
+    <div className="min-h-full w-full p-4 sm:p-6">
+      <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
         <DashboardCard
           title="Total revenus"
           description="Somme de toutes vos sources de revenus (configurées dans Revenus)."
           iconSrc="/resources/icons/revenus.png"
+          iconPriority
           linkHref="/dashboard/revenus"
           linkLabel="Revenus"
         >
-          <p className="text-3xl font-bold tabular-nums text-green-600 dark:text-green-500">
+          <p className="text-3xl font-bold tabular-nums text-white">
             {totalIncome.toLocaleString("fr-FR", {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
@@ -235,7 +236,7 @@ export default function DashboardPage() {
         >
           {totalIncome > 0 ? (
             <>
-              <p className="text-3xl font-bold tabular-nums text-destructive">
+              <p className="text-3xl font-bold tabular-nums text-white">
                 {totalExpenses.toLocaleString("fr-FR", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
@@ -306,7 +307,7 @@ export default function DashboardPage() {
           ) : (
             <>
               <p
-                className={`text-3xl font-bold tabular-nums ${resteAInvestir < 0 ? "text-destructive" : "text-primary"}`}
+                className="text-3xl font-bold tabular-nums text-white"
               >
                 {resteAInvestir.toLocaleString("fr-FR", {
                   minimumFractionDigits: 2,
@@ -404,9 +405,9 @@ export default function DashboardPage() {
                   })}{" "}
                   €
                 </p>
-                <div className="mt-3 h-[260px] w-full border-t border-border pt-3">
+                <div className="mt-3 h-[260px] min-h-[200px] w-full border-t border-border pt-3">
                   {peaEpargneChartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                       <PieChart
                         margin={{ top: 8, right: 8, bottom: 8, left: 8 }}
                       >

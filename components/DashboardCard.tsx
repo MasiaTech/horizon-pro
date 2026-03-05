@@ -28,6 +28,8 @@ export interface DashboardCardProps {
   headerAction?: React.ReactNode;
   /** Applique opacity-75 à la carte. */
   dimmed?: boolean;
+  /** Priorité de chargement de l'image (LCP, au-dessus de la ligne de flottaison). */
+  iconPriority?: boolean;
   /** Classes additionnelles sur la Card. */
   className?: string;
 }
@@ -41,17 +43,18 @@ export function DashboardCard({
   description,
   children,
   iconSrc,
-  iconSize = 230,
+  iconSize = 180,
   linkHref,
   linkLabel,
   headerAction,
   dimmed,
+  iconPriority,
   className,
 }: DashboardCardProps) {
   const cardClass = [
     "relative",
     CARD_MIN_HEIGHT,
-    iconSrc && "overflow-visible",
+    iconSrc && "flex flex-col overflow-visible",
     dimmed && "opacity-75",
     className,
   ]
@@ -91,13 +94,14 @@ export function DashboardCard({
 
   const cardInner = iconSrc ? (
     <>
-      <div className="relative z-10 max-w-[62%]">
-        {header}
-        {body}
+      <div className="flex flex-col sm:block">
+        <div className="w-full sm:max-w-[70%] sm:z-10">
+          {header}
+          {body}
+        </div>
       </div>
       <div
-        className="pointer-events-none absolute bottom-0 right-0 z-0"
-        style={{ right: -20, bottom: -20 }}
+        className="pointer-events-none flex justify-center pb-4 pt-4 sm:absolute sm:bottom-[20px] sm:right-[20px] sm:z-0 sm:pb-0 sm:pt-0"
         aria-hidden
       >
         <Image
@@ -106,6 +110,7 @@ export function DashboardCard({
           width={iconSize}
           height={iconSize}
           className="object-contain"
+          priority={iconPriority}
         />
       </div>
     </>

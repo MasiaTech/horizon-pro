@@ -889,7 +889,7 @@ export default function DepensesPage() {
   }
 
   return (
-    <div className="min-h-full w-full p-6">
+    <div className="min-h-full w-full p-4 sm:p-6">
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

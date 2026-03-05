@@ -22,10 +22,15 @@ type User = {
   user_metadata?: { full_name?: string; name?: string };
 };
 
+const linkClass = (active: boolean) =>
+  `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+    active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+  }`;
+
 /**
- * Sidebar type dashboard (shadcn-vue example) : logo + nom en haut, menu, profil en bas.
+ * Contenu commun de la sidebar (menu + profil), réutilisé dans la sidebar desktop et le Sheet mobile.
  */
-export default function DashboardSidebar() {
+function DashboardSidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const { loading, incomeSources, expenseCategories, incomeGroupNames } = useProfileContext();
@@ -67,92 +72,45 @@ export default function DashboardSidebar() {
     "Profil";
 
   return (
-    <aside className="flex h-screen w-56 flex-col border-r border-border bg-card">
-      {/* Haut : logo + nom de l'app */}
+    <>
       <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
         <Logo size={32} href="/" />
         <span className="font-semibold tracking-tight">Horizon</span>
       </div>
-
-      {/* Menu */}
       <nav className="flex-1 space-y-1 overflow-auto p-2">
-        <Link
-          href="/dashboard"
-          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            pathname === "/dashboard"
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-          }`}
-        >
+        <Link href="/dashboard" className={linkClass(pathname === "/dashboard")} onClick={onLinkClick}>
           <LayoutDashboard className="size-4 shrink-0" />
           <span>Dashboard</span>
         </Link>
-        <Link
-          href="/dashboard/revenus"
-          className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-            pathname === "/dashboard/revenus"
-              ? "bg-accent text-accent-foreground"
-              : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-          }`}
-        >
+        <Link href="/dashboard/revenus" className={linkClass(pathname === "/dashboard/revenus")} onClick={onLinkClick}>
           <Wallet className="size-4 shrink-0" />
           <span>Revenus</span>
         </Link>
         {totalIncome > 0 && (
-          <Link
-            href="/dashboard/depenses"
-            className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              pathname === "/dashboard/depenses"
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-            }`}
-          >
+          <Link href="/dashboard/depenses" className={linkClass(pathname === "/dashboard/depenses")} onClick={onLinkClick}>
             <CreditCard className="size-4 shrink-0" />
             <span>Dépenses</span>
           </Link>
         )}
         {showSimulateurImpot && (
-          <Link
-            href="/dashboard/simulateur-impot"
-            className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-              pathname === "/dashboard/simulateur-impot"
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-            }`}
-          >
+          <Link href="/dashboard/simulateur-impot" className={linkClass(pathname === "/dashboard/simulateur-impot")} onClick={onLinkClick}>
             <Calculator className="size-4 shrink-0" />
             <span>Simulateur impôt</span>
           </Link>
         )}
         {showEpargne && (
           <>
-            <Link
-              href="/dashboard/epargne"
-              className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                pathname === "/dashboard/epargne"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-              }`}
-            >
+            <Link href="/dashboard/epargne" className={linkClass(pathname === "/dashboard/epargne")} onClick={onLinkClick}>
               <PiggyBank className="size-4 shrink-0" />
               <span>Épargne</span>
             </Link>
-            <Link
-              href="/dashboard/pea"
-              className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-                pathname === "/dashboard/pea"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-              }`}
-            >
+            <Link href="/dashboard/pea" className={linkClass(pathname === "/dashboard/pea")} onClick={onLinkClick}>
               <TrendingUp className="size-4 shrink-0" />
               <span>PEA</span>
             </Link>
           </>
         )}
       </nav>
-
-      {/* Bas : profil */}
       <div className="border-t border-border p-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -185,7 +143,7 @@ export default function DashboardSidebar() {
               Déconnexion
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/dashboard/parametres" className="cursor-pointer">
+              <Link href="/dashboard/parametres" className="cursor-pointer" onClick={onLinkClick}>
                 <Settings className="mr-2 h-4 w-4" />
                 Paramètres
               </Link>
@@ -193,6 +151,19 @@ export default function DashboardSidebar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+    </>
+  );
+}
+
+/**
+ * Sidebar desktop : visible uniquement à partir de lg. Sur mobile, le menu est dans un Sheet (voir layout).
+ */
+export default function DashboardSidebar() {
+  return (
+    <aside className="hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card lg:flex">
+      <DashboardSidebarContent />
     </aside>
   );
 }
+
+export { DashboardSidebarContent };

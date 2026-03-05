@@ -800,7 +800,7 @@ export default function PEAPage() {
   }
 
   return (
-    <div className="min-h-full w-full p-6">
+    <div className="min-h-full w-full p-4 sm:p-6">
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Plan d&apos;épargne en actions (PEA)</CardTitle>
@@ -917,8 +917,8 @@ export default function PEAPage() {
                 Plafond déjà atteint.
               </p>
             )}
-            <div className="h-[220px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-[220px] min-h-[200px] w-full">
+              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
                 <AreaChart
                   data={chartData}
                   margin={{ top: 28, right: 8, left: 0, bottom: 0 }}
