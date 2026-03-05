@@ -8,7 +8,7 @@ import LoginForm from './LoginForm'
  */
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center p-8 sm:min-h-screen">
       <Suspense fallback={<div className="h-96 w-full max-w-md animate-pulse rounded-xl bg-card" />}>
         <LoginForm />
       </Suspense>

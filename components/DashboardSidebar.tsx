@@ -160,7 +160,7 @@ function DashboardSidebarContent({ onLinkClick }: { onLinkClick?: () => void }) 
  */
 export default function DashboardSidebar() {
   return (
-    <aside className="hidden h-screen w-56 shrink-0 flex-col border-r border-border bg-card lg:flex">
+    <aside className="hidden h-[100dvh] w-56 shrink-0 flex-col border-r border-border bg-card lg:flex lg:h-screen">
       <DashboardSidebarContent />
     </aside>
   );

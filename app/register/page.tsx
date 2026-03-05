@@ -6,7 +6,7 @@ import RegisterForm from "./RegisterForm";
  */
 export default function RegisterPage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center p-8 sm:min-h-screen">
       <RegisterForm />
     </main>
   );

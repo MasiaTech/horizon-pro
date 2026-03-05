@@ -763,7 +763,7 @@ export default function RevenusPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center p-8">
+      <div className="flex min-h-[40dvh] items-center justify-center p-8 sm:min-h-[40vh]">
         <p className="text-muted-foreground">Chargement...</p>
       </div>
     );

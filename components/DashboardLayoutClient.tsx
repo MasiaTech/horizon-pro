@@ -20,7 +20,7 @@ export default function DashboardLayoutClient({
 
   return (
     <>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-[100dvh] overflow-hidden sm:h-screen">
         <DashboardSidebar />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <DashboardHeader onMenuClick={() => setMobileMenuOpen(true)} />
@@ -30,7 +30,7 @@ export default function DashboardLayoutClient({
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetContent
           side="left"
-          className="flex h-full w-56 flex-col gap-0 p-0"
+          className="flex h-full min-h-[100dvh] w-56 flex-col gap-0 p-0 sm:min-h-0"
           aria-describedby={undefined}
         >
           <SheetTitle className="sr-only">Menu de navigation</SheetTitle>

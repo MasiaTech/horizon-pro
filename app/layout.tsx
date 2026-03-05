@@ -70,7 +70,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className="dark scroll-smooth">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-[100dvh] antialiased sm:min-h-screen">{children}</body>
     </html>
   )
 }

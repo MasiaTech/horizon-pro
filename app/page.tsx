@@ -61,7 +61,7 @@ const jsonLd = {
  */
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-[100dvh] bg-background sm:min-h-screen">
       {/* ----- Nav ----- */}
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
