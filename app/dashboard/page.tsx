@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { PiggyBank, TrendingUp } from "lucide-react";
+import { SummaryCardRow } from "@/components/SummaryCardRow";
 import {
   Cell,
-  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -15,12 +16,12 @@ import {
   getIncomeAmount,
   getIncomeAmountForTax,
   getPEAHoldingValue,
-  SÉCURITÉ_OBJECTIVE_NAME,
 } from "@/lib/types";
 import { BAREME_META } from "@/lib/impot";
 import { useProfileContext } from "@/components/ProfileProvider";
 import { DashboardCard } from "@/components/DashboardCard";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import {
   Card,
   CardContent,
@@ -44,7 +45,6 @@ export default function DashboardPage() {
     placementAllocation,
     setPlacementAllocation,
     savingsAccounts,
-    savingsObjectives,
     peaActions,
     peaEtfs,
     saveProfile,
@@ -82,6 +82,9 @@ export default function DashboardPage() {
 
   const dataRef = useRef({ placementAllocation });
   dataRef.current.placementAllocation = placementAllocation;
+
+  const [peaExpandedActions, setPeaExpandedActions] = useState(false);
+  const [peaExpandedEtfs, setPeaExpandedEtfs] = useState(false);
 
   const totalIncome = incomeSources.reduce(
     (sum, s) => sum + getIncomeAmount(s),
@@ -296,36 +299,8 @@ export default function DashboardPage() {
         </DashboardCard>
 
         <DashboardCard
-          title="Impôt sur le revenu"
-          description={`Estimation selon le barème ${BAREME_META.annee} à partir des revenus indexés.`}
-          iconSrc="/resources/icons/impotrevenus.png"
-          linkHref={showSimulateurImpot ? "/dashboard/simulateur-impot" : undefined}
-          linkLabel={showSimulateurImpot ? "Simulateur impôt" : undefined}
-          dimmed={!showSimulateurImpot}
-        >
-          {showSimulateurImpot ? (
-            <>
-              <p className="text-3xl font-bold tabular-nums text-foreground">
-                {annualIncomeForTax.toLocaleString("fr-FR", {
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                })}{" "}
-                €
-              </p>
-              <p className="mt-3 border-t border-border pt-3 text-sm text-muted-foreground">
-                Revenu annuel pris en compte (× 12)
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Cochez au moins une ligne « Indexé impôt » dans Revenus pour afficher l&apos;estimation et accéder au simulateur.
-            </p>
-          )}
-        </DashboardCard>
-
-        <DashboardCard
           title="Reste à investir"
-          description="Revenus totaux − Dépenses totales (calculé automatiquement)."
+          description="Revenus totaux − Dépenses totales (calculé automatiquement). Répartition du reste à investir."
           iconSrc="/resources/icons/investir.png"
         >
           {totalIncome === 0 && totalExpenses === 0 ? (
@@ -334,9 +309,7 @@ export default function DashboardPage() {
             </p>
           ) : (
             <>
-              <p
-                className="text-3xl font-bold tabular-nums text-white"
-              >
+              <p className="text-3xl font-bold tabular-nums text-white">
                 {resteAInvestir.toLocaleString("fr-FR", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
@@ -347,71 +320,109 @@ export default function DashboardPage() {
                 Revenus : {totalIncome.toLocaleString("fr-FR")} € — Dépenses :{" "}
                 {totalExpenses.toLocaleString("fr-FR")} €
               </p>
+              {resteAInvestir < 0 && (
+                <p className="mt-3 rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+                  Oh non, il faut changer quelque chose dans vos dépenses ou
+                  revenus.
+                </p>
+              )}
+              {showPlacementsCards && resteAInvestir >= 0 && (
+                <div className="mt-4 space-y-5 border-t border-border pt-4">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Répartition
+                  </p>
+                  {(() => {
+                    const epargneIndex = placementAllocation.findIndex(
+                      (p) => p.name.toLowerCase().includes("épargne"),
+                    );
+                    const peaIndex = placementAllocation.findIndex(
+                      (p) => p.name.toUpperCase() === "PEA",
+                    );
+                    const epargne =
+                      epargneIndex >= 0 ? placementAllocation[epargneIndex] : null;
+                    const pea =
+                      peaIndex >= 0 ? placementAllocation[peaIndex] : null;
+                    return (
+                      <>
+                        {epargne != null && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-2 text-sm">
+                              <span className="font-medium text-muted-foreground">
+                                {epargne.name}
+                              </span>
+                              <span className="font-semibold tabular-nums text-foreground">
+                                {epargne.percentage ?? 0} %
+                              </span>
+                            </div>
+                            <Slider
+                              value={[epargne.percentage ?? 0]}
+                              onValueChange={(v) =>
+                                updatePlacementPercentage(
+                                  epargneIndex,
+                                  Math.round((v[0] ?? 0) * 100) / 100,
+                                )
+                              }
+                              min={0}
+                              max={100}
+                              step={1}
+                              className="w-full"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              ={" "}
+                              {(
+                                (resteAInvestir * (epargne.percentage ?? 0)) /
+                                100
+                              ).toLocaleString("fr-FR", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              € / mois
+                            </p>
+                          </div>
+                        )}
+                        {pea != null && (
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between gap-2 text-sm">
+                              <span className="font-medium text-muted-foreground">
+                                {pea.name}
+                              </span>
+                              <span className="font-semibold tabular-nums text-foreground">
+                                {pea.percentage ?? 0} %
+                              </span>
+                            </div>
+                            <Slider
+                              value={[pea.percentage ?? 0]}
+                              onValueChange={(v) =>
+                                updatePlacementPercentage(
+                                  peaIndex,
+                                  Math.round((v[0] ?? 0) * 100) / 100,
+                                )
+                              }
+                              min={0}
+                              max={100}
+                              step={1}
+                              className="w-full"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              ={" "}
+                              {(
+                                (resteAInvestir * (pea.percentage ?? 0)) /
+                                100
+                              ).toLocaleString("fr-FR", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              € / mois
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
             </>
           )}
-        </DashboardCard>
-
-        <DashboardCard
-          title="Répartition"
-          description="Répartition du reste à investir."
-          iconSrc="/resources/icons/repartir.png"
-          dimmed={!showPlacementsCards}
-        >
-          <div className="space-y-4">
-            {!showPlacementsCards ? (
-              <p className="text-sm text-muted-foreground">
-                {placementConditionMessage}
-              </p>
-            ) : resteAInvestir < 0 ? (
-              <p className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-                Oh non, il faut changer quelque chose dans vos dépenses ou
-                revenus.
-              </p>
-            ) : (
-              <>
-                <ul className="mt-3 space-y-3 border-t border-border pt-3">
-                  {placementAllocation.map(
-                    (item: PlacementAllocation, index: number) => (
-                      <li
-                        key={index}
-                        className="flex flex-wrap items-center gap-2"
-                      >
-                        <span className="min-w-[6rem] font-medium text-muted-foreground">
-                          {item.name}
-                        </span>
-                        <Input
-                          type="number"
-                          step="0.5"
-                          min={0}
-                          max={100}
-                          value={item.percentage === 0 ? "" : item.percentage}
-                          onChange={(e) =>
-                            updatePlacementPercentage(
-                              index,
-                              Number(e.target.value) || 0,
-                            )
-                          }
-                          className="w-20 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                        />
-                        <span className="text-sm text-muted-foreground">%</span>
-                        <span className="text-sm font-medium tabular-nums text-foreground">
-                          ={" "}
-                          {(
-                            (resteAInvestir * (item.percentage || 0)) /
-                            100
-                          ).toLocaleString("fr-FR", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}{" "}
-                          €
-                        </span>
-                      </li>
-                    ),
-                  )}
-                </ul>
-              </>
-            )}
-          </div>
         </DashboardCard>
 
         <DashboardCard
@@ -426,83 +437,107 @@ export default function DashboardPage() {
               </p>
             ) : (
               <>
-                <p className="text-3xl font-bold tabular-nums text-foreground">
-                  {totalPlacements.toLocaleString("fr-FR", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}{" "}
-                  €
-                </p>
-                <div className="mt-3 h-[260px] min-h-[200px] w-full border-t border-border pt-3">
+                <div className="relative my-4 h-[200px] w-full">
                   {peaEpargneChartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-                      <PieChart
-                        margin={{ top: 8, right: 8, bottom: 8, left: 8 }}
-                      >
-                        <Pie
-                          data={peaEpargneChartData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={50}
-                          outerRadius={75}
-                          paddingAngle={2}
-                          stroke="hsl(var(--border))"
-                          strokeWidth={1}
-                          label={({ name, value }) =>
-                            `${name}: ${value.toLocaleString("fr-FR", {
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                            })} €`
-                          }
-                          labelLine={{ stroke: "hsl(var(--muted-foreground))" }}
-                        >
-                          {peaEpargneChartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          cursor={false}
-                          content={({ active, payload }) => {
-                            if (!active || !payload?.[0]) return null;
-                            const d = payload[0];
-                            const name = String(d.name ?? "");
-                            const v = Number(d.value) ?? 0;
-                            const pct =
-                              totalPlacements > 0
-                                ? ` (${((v / totalPlacements) * 100).toFixed(1)} %)`
-                                : "";
-                            return (
-                              <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-md">
-                                <p className="font-medium">{name}</p>
-                                <p className="font-mono text-foreground">
-                                  {v.toLocaleString("fr-FR", {
-                                    minimumFractionDigits: 2,
-                                    maximumFractionDigits: 2,
-                                  })}{" "}
-                                  €{pct}
-                                </p>
-                              </div>
-                            );
-                          }}
-                          allowEscapeViewBox={{ x: false, y: false }}
-                        />
-                        <Legend
-                          wrapperStyle={{ fontSize: "11px" }}
-                          formatter={(value) => (
-                            <span className="text-muted-foreground">
-                              {value}
-                            </span>
-                          )}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                          <Pie
+                            data={peaEpargneChartData}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius="78%"
+                            outerRadius="95%"
+                            paddingAngle={2}
+                            stroke="transparent"
+                            strokeWidth={0}
+                          >
+                            {peaEpargneChartData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            cursor={false}
+                            content={({ active, payload }) => {
+                              if (!active || !payload?.[0]) return null;
+                              const d = payload[0];
+                              const name = String(d.name ?? "");
+                              const v = Number(d.value) ?? 0;
+                              const pct =
+                                totalPlacements > 0
+                                  ? ` (${((v / totalPlacements) * 100).toFixed(1)} %)`
+                                  : "";
+                              return (
+                                <div className="rounded-lg bg-card px-3 py-2 text-xs shadow-md">
+                                  <p className="font-medium">{name}</p>
+                                  <p className="font-mono text-foreground">
+                                    {v.toLocaleString("fr-FR", {
+                                      minimumFractionDigits: 2,
+                                      maximumFractionDigits: 2,
+                                    })}{" "}
+                                    €{pct}
+                                  </p>
+                                </div>
+                              );
+                            }}
+                            allowEscapeViewBox={{ x: false, y: false }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Total des actifs
+                        </p>
+                        <p className="text-2xl font-bold tabular-nums text-foreground">
+                          {totalPlacements.toLocaleString("fr-FR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          €
+                        </p>
+                      </div>
+                    </>
                   ) : (
-                    <div className="flex h-full items-center justify-center rounded-md border border-dashed border-muted-foreground/30 text-sm text-muted-foreground">
-                      Aucune donnée PEA ou Épargne à afficher
+                    <div className="flex h-full flex-col items-center justify-center text-sm text-muted-foreground">
+                      <p className="font-medium text-foreground">Total des actifs</p>
+                      <p className="mt-1">0,00 €</p>
+                      <p className="mt-2 text-xs">Aucune donnée PEA ou Épargne</p>
                     </div>
                   )}
+                </div>
+                <div className="space-y-2 pt-1">
+                  <SummaryCardRow
+                    icon={<TrendingUp className="size-5" />}
+                    title="PEA"
+                    subtitle={`${peaActions.length + peaEtfs.length} ligne${(peaActions.length + peaEtfs.length) > 1 ? "s" : ""}`}
+                    value={`${peaTotal.toLocaleString("fr-FR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })} €`}
+                    percentage={
+                      totalPlacements > 0
+                        ? `${((peaTotal / totalPlacements) * 100).toFixed(0)} %`
+                        : "0 %"
+                    }
+                    href="/dashboard/pea"
+                  />
+                  <SummaryCardRow
+                    icon={<PiggyBank className="size-5" />}
+                    title="Épargne"
+                    subtitle={`${savingsAccounts.length} compte${savingsAccounts.length > 1 ? "s" : ""}`}
+                    value={`${epargneTotal.toLocaleString("fr-FR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })} €`}
+                    percentage={
+                      totalPlacements > 0
+                        ? `${((epargneTotal / totalPlacements) * 100).toFixed(0)} %`
+                        : "0 %"
+                    }
+                    href="/dashboard/epargne"
+                  />
                 </div>
               </>
             )}
@@ -531,52 +566,102 @@ export default function DashboardPage() {
                 €
               </p>
               {(peaActions.length > 0 || peaEtfs.length > 0) && (
-                <ul className="mt-3 space-y-1.5 border-t border-border pt-3 text-sm">
+                <div className="mt-3 space-y-2 border-t border-border pt-3">
                   {peaActions.length > 0 && (
-                    <>
-                      <li className="font-medium text-foreground">Actions</li>
-                      {peaActions.map((h, i) => (
-                        <li
-                          key={`action-${i}-${h.name}`}
-                          className="flex justify-between gap-2 pl-2"
-                        >
-                          <span className="truncate text-muted-foreground">
-                            {h.name || "—"}
-                          </span>
-                          <span className="shrink-0 font-medium tabular-nums text-foreground">
-                            {getPEAHoldingValue(h).toLocaleString("fr-FR", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}{" "}
-                            €
-                          </span>
-                        </li>
-                      ))}
-                    </>
+                    <SummaryCardRow
+                      icon={<TrendingUp className="size-5" />}
+                      title="Actions"
+                      subtitle={`${peaActions.length} ligne${peaActions.length > 1 ? "s" : ""}`}
+                      value={`${peaActions.reduce((s, h) => s + getPEAHoldingValue(h), 0).toLocaleString("fr-FR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })} €`}
+                      percentage={
+                        peaTotal > 0
+                          ? `${((peaActions.reduce((s, h) => s + getPEAHoldingValue(h), 0) / peaTotal) * 100).toFixed(0)} %`
+                          : "0 %"
+                      }
+                      href="/dashboard/pea"
+                      expandable
+                      expanded={peaExpandedActions}
+                      onToggleExpand={() =>
+                        setPeaExpandedActions((prev) => !prev)
+                      }
+                      expandAriaLabel={
+                        peaExpandedActions
+                          ? "Masquer le détail des actions"
+                          : "Afficher le détail des actions"
+                      }
+                    >
+                      <ul className="space-y-1 text-sm">
+                        {peaActions.map((h, i) => (
+                          <li
+                            key={`action-${i}-${h.name}`}
+                            className="flex justify-between gap-2 py-1"
+                          >
+                            <span className="truncate text-muted-foreground">
+                              {h.name || "—"}
+                            </span>
+                            <span className="shrink-0 font-medium tabular-nums text-foreground">
+                              {getPEAHoldingValue(h).toLocaleString("fr-FR", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              €
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </SummaryCardRow>
                   )}
                   {peaEtfs.length > 0 && (
-                    <>
-                      <li className="mt-1 font-medium text-foreground">ETF</li>
-                      {peaEtfs.map((h, i) => (
-                        <li
-                          key={`etf-${i}-${h.name}`}
-                          className="flex justify-between gap-2 pl-2"
-                        >
-                          <span className="truncate text-muted-foreground">
-                            {h.name || "—"}
-                          </span>
-                          <span className="shrink-0 font-medium tabular-nums text-foreground">
-                            {getPEAHoldingValue(h).toLocaleString("fr-FR", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}{" "}
-                            €
-                          </span>
-                        </li>
-                      ))}
-                    </>
+                    <SummaryCardRow
+                      icon={<TrendingUp className="size-5" />}
+                      title="ETF"
+                      subtitle={`${peaEtfs.length} ligne${peaEtfs.length > 1 ? "s" : ""}`}
+                      value={`${peaEtfs.reduce((s, h) => s + getPEAHoldingValue(h), 0).toLocaleString("fr-FR", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })} €`}
+                      percentage={
+                        peaTotal > 0
+                          ? `${((peaEtfs.reduce((s, h) => s + getPEAHoldingValue(h), 0) / peaTotal) * 100).toFixed(0)} %`
+                          : "0 %"
+                      }
+                      href="/dashboard/pea"
+                      expandable
+                      expanded={peaExpandedEtfs}
+                      onToggleExpand={() =>
+                        setPeaExpandedEtfs((prev) => !prev)
+                      }
+                      expandAriaLabel={
+                        peaExpandedEtfs
+                          ? "Masquer le détail des ETF"
+                          : "Afficher le détail des ETF"
+                      }
+                    >
+                      <ul className="space-y-1 text-sm">
+                        {peaEtfs.map((h, i) => (
+                          <li
+                            key={`etf-${i}-${h.name}`}
+                            className="flex justify-between gap-2 py-1"
+                          >
+                            <span className="truncate text-muted-foreground">
+                              {h.name || "—"}
+                            </span>
+                            <span className="shrink-0 font-medium tabular-nums text-foreground">
+                              {getPEAHoldingValue(h).toLocaleString("fr-FR", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              €
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </SummaryCardRow>
                   )}
-                </ul>
+                </div>
               )}
             </>
           )}
@@ -584,7 +669,7 @@ export default function DashboardPage() {
 
         <DashboardCard
           title="Épargne"
-          description="Objectifs et comptes (solde par objectif, objectif si défini)."
+          description="Comptes épargne et soldes actuels."
           iconSrc="/resources/icons/epargne.png"
           dimmed={!showPlacementsCards}
           linkHref={showPlacementsCards ? "/dashboard/epargne" : undefined}
@@ -603,63 +688,68 @@ export default function DashboardPage() {
                 })}{" "}
                 €
               </p>
-              {savingsObjectives.length > 0 ? (
-                <ul className="mt-3 space-y-1.5 border-t border-border pt-3 text-sm">
-                  {savingsObjectives.map((obj, i) => {
-                    const accountNames = new Set(
-                      (obj.accountNames ?? [])
-                        .map((n) => n.trim())
-                        .filter(Boolean),
-                    );
-                    const balance = savingsAccounts
-                      .filter((a) => accountNames.has(a.name.trim()))
-                      .reduce((s, a) => s + (Number(a.currentBalance) || 0), 0);
-                    const isSecurite =
-                      obj.name.trim() === SÉCURITÉ_OBJECTIVE_NAME;
-                    const goal = isSecurite
-                      ? 6 * totalExpenses
-                      : obj.goalAmount != null
-                        ? Number(obj.goalAmount)
-                        : 0;
-                    const showGoal = goal > 0;
+              {savingsAccounts.length > 0 ? (
+                <div className="mt-3 space-y-2 border-t border-border pt-3">
+                  {savingsAccounts.map((acc, i) => {
+                    const balance = Number(acc.currentBalance) || 0;
+                    const pct =
+                      epargneTotal > 0
+                        ? ((balance / epargneTotal) * 100).toFixed(0)
+                        : "0";
                     return (
-                      <li
-                        key={`${obj.name}-${i}`}
-                        className="flex justify-between gap-2"
-                      >
-                        <span className="text-muted-foreground">
-                          {obj.name}
-                        </span>
-                        <span className="tabular-nums text-foreground">
-                          {balance.toLocaleString("fr-FR", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}{" "}
-                          €
-                          {showGoal && (
-                            <>
-                              <span className="text-muted-foreground"> / </span>
-                              {goal.toLocaleString("fr-FR", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}{" "}
-                              €
-                              <span className="ml-0.5 text-xs text-muted-foreground">
-                                (objectif)
-                              </span>
-                            </>
-                          )}
-                        </span>
-                      </li>
+                      <SummaryCardRow
+                        key={`${acc.name}-${i}`}
+                        icon={<PiggyBank className="size-5" />}
+                        title={acc.name}
+                        subtitle={
+                          acc.ratePercent != null
+                            ? `Taux ${Number(acc.ratePercent).toLocaleString("fr-FR")} %`
+                            : "Compte épargne"
+                        }
+                        value={`${balance.toLocaleString("fr-FR", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })} €`}
+                        percentage={`${pct} %`}
+                        href="/dashboard/epargne"
+                      />
                     );
                   })}
-                </ul>
+                </div>
               ) : (
                 <p className="mt-3 border-t border-border pt-3 text-sm text-muted-foreground">
-                  Aucun objectif épargne configuré.
+                  Aucun compte épargne configuré.
                 </p>
               )}
             </>
+          )}
+        </DashboardCard>
+
+        <DashboardCard
+          title="Impôt sur le revenu"
+          description={`Estimation selon le barème ${BAREME_META.annee} à partir des revenus indexés.`}
+          iconSrc="/resources/icons/impotrevenus.png"
+          linkHref={showSimulateurImpot ? "/dashboard/simulateur-impot" : undefined}
+          linkLabel={showSimulateurImpot ? "Simulateur impôt" : undefined}
+          dimmed={!showSimulateurImpot}
+        >
+          {showSimulateurImpot ? (
+            <>
+              <p className="text-3xl font-bold tabular-nums text-foreground">
+                {annualIncomeForTax.toLocaleString("fr-FR", {
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })}{" "}
+                €
+              </p>
+              <p className="mt-3 border-t border-border pt-3 text-sm text-muted-foreground">
+                Revenu annuel pris en compte (× 12)
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Cochez au moins une ligne « Indexé impôt » dans Revenus pour afficher l&apos;estimation et accéder au simulateur.
+            </p>
           )}
         </DashboardCard>
       </div>
