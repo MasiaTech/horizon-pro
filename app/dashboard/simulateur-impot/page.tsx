@@ -19,6 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 
 /**
@@ -62,8 +63,38 @@ export default function SimulateurImpotPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40dvh] items-center justify-center p-8 sm:min-h-[40vh]">
-        <p className="text-muted-foreground">Chargement...</p>
+      <div className="space-y-6 p-4 sm:space-y-8 sm:p-6">
+        <div>
+          <Skeleton className="h-8 w-80 rounded bg-muted" />
+          <Skeleton className="mt-2 h-4 w-full max-w-[500px] rounded bg-muted" />
+          <Skeleton className="mt-1 h-3 w-72 rounded bg-muted" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-40 rounded bg-muted" />
+            <Skeleton className="mt-2 h-4 w-full max-w-[320px] rounded bg-muted" />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Skeleton className="h-8 w-24 rounded bg-muted" />
+            <Skeleton className="h-4 w-48 rounded bg-muted" />
+            <Skeleton className="h-4 w-56 rounded bg-muted" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-28 rounded bg-muted" />
+            <Skeleton className="mt-2 h-4 w-full max-w-[380px] rounded bg-muted" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-3 w-full rounded bg-muted" />
+            <Skeleton className="h-10 w-full rounded bg-muted" />
+            <div className="grid gap-2 rounded-lg border border-border bg-muted/20 p-4 sm:grid-cols-2">
+              <Skeleton className="h-12 w-full rounded bg-muted" />
+              <Skeleton className="h-12 w-full rounded bg-muted" />
+              <Skeleton className="h-16 w-full rounded bg-muted sm:col-span-2" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

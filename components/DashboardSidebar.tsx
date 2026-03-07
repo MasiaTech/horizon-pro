@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { LogOut, ChevronsUpDown, LayoutDashboard, Wallet, CreditCard, PiggyBank, TrendingUp, Settings, Calculator } from "lucide-react";
 import { useProfileContext } from "@/components/ProfileProvider";
 import { getExpenseAmount, getIncomeAmount } from "@/lib/types";
@@ -33,6 +34,7 @@ const linkClass = (active: boolean) =>
 function DashboardSidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [skeletonMinElapsed, setSkeletonMinElapsed] = useState(false);
   const { loading, incomeSources, expenseCategories, incomeGroupNames } = useProfileContext();
   const totalIncome = incomeSources.reduce((sum, s) => sum + getIncomeAmount(s), 0);
   const totalExpenses = expenseCategories.reduce(
@@ -46,6 +48,12 @@ function DashboardSidebarContent({ onLinkClick }: { onLinkClick?: () => void }) 
     totalExpenses > 0 &&
     resteAInvestir > 0;
   const showSimulateurImpot = incomeSources.some((s) => s.taxIndexed === true);
+
+  // Afficher les skeletons au moins 800 ms après le montage (visible quand on ouvre le menu mobile après chargement)
+  useEffect(() => {
+    const t = setTimeout(() => setSkeletonMinElapsed(true), 800);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -86,28 +94,41 @@ function DashboardSidebarContent({ onLinkClick }: { onLinkClick?: () => void }) 
           <Wallet className="size-4 shrink-0" />
           <span>Revenus</span>
         </Link>
-        {totalIncome > 0 && (
-          <Link href="/dashboard/depenses" className={linkClass(pathname === "/dashboard/depenses")} onClick={onLinkClick}>
-            <CreditCard className="size-4 shrink-0" />
-            <span>Dépenses</span>
-          </Link>
-        )}
-        {showSimulateurImpot && (
-          <Link href="/dashboard/simulateur-impot" className={linkClass(pathname === "/dashboard/simulateur-impot")} onClick={onLinkClick}>
-            <Calculator className="size-4 shrink-0" />
-            <span>Simulateur impôt</span>
-          </Link>
-        )}
-        {showEpargne && (
+        {loading || !skeletonMinElapsed ? (
           <>
-            <Link href="/dashboard/epargne" className={linkClass(pathname === "/dashboard/epargne")} onClick={onLinkClick}>
-              <PiggyBank className="size-4 shrink-0" />
-              <span>Épargne</span>
-            </Link>
-            <Link href="/dashboard/pea" className={linkClass(pathname === "/dashboard/pea")} onClick={onLinkClick}>
-              <TrendingUp className="size-4 shrink-0" />
-              <span>PEA</span>
-            </Link>
+            {["Dépenses", "Simulateur impôt", "Épargne", "PEA"].map((label) => (
+              <div key={label} className="flex items-center gap-2 rounded-md px-3 py-2 text-sm">
+                <Skeleton className="size-4 shrink-0 rounded bg-muted" />
+                <Skeleton className="h-4 w-24 shrink-0 rounded bg-muted" />
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
+            {totalIncome > 0 && (
+              <Link href="/dashboard/depenses" className={linkClass(pathname === "/dashboard/depenses")} onClick={onLinkClick}>
+                <CreditCard className="size-4 shrink-0" />
+                <span>Dépenses</span>
+              </Link>
+            )}
+            {showSimulateurImpot && (
+              <Link href="/dashboard/simulateur-impot" className={linkClass(pathname === "/dashboard/simulateur-impot")} onClick={onLinkClick}>
+                <Calculator className="size-4 shrink-0" />
+                <span>Simulateur impôt</span>
+              </Link>
+            )}
+            {showEpargne && (
+              <>
+                <Link href="/dashboard/epargne" className={linkClass(pathname === "/dashboard/epargne")} onClick={onLinkClick}>
+                  <PiggyBank className="size-4 shrink-0" />
+                  <span>Épargne</span>
+                </Link>
+                <Link href="/dashboard/pea" className={linkClass(pathname === "/dashboard/pea")} onClick={onLinkClick}>
+                  <TrendingUp className="size-4 shrink-0" />
+                  <span>PEA</span>
+                </Link>
+              </>
+            )}
           </>
         )}
       </nav>

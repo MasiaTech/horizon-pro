@@ -21,6 +21,14 @@ import { BAREME_META } from "@/lib/impot";
 import { useProfileContext } from "@/components/ProfileProvider";
 import { DashboardCard } from "@/components/DashboardCard";
 import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 /**
  * Dashboard : synthèse (Total revenu, Total dépense, Reste à investir, Placements).
@@ -185,8 +193,28 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40dvh] items-center justify-center p-8 sm:min-h-[40vh]">
-        <p className="text-muted-foreground">Chargement...</p>
+      <div className="min-h-full w-full p-4 sm:p-6">
+        <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card
+              key={i}
+              className="min-h-[18rem] flex flex-col"
+            >
+              <CardHeader className="pb-2">
+                <Skeleton className="h-6 w-40 rounded bg-muted" />
+                <Skeleton className="mt-2 h-4 w-full max-w-[280px] rounded bg-muted" />
+              </CardHeader>
+              <CardContent className="flex-1 space-y-3">
+                <Skeleton className="h-9 w-32 rounded bg-muted" />
+                <div className="space-y-2 border-t border-border pt-3">
+                  <Skeleton className="h-4 w-full rounded bg-muted" />
+                  <Skeleton className="h-4 w-4/5 rounded bg-muted" />
+                  <Skeleton className="h-4 w-3/5 rounded bg-muted" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }

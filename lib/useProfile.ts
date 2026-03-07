@@ -96,12 +96,24 @@ export function useProfile(autoSaveDelayMs = 600) {
   };
 
   const loadProfile = useCallback(async () => {
+    const minLoadingMs = 400;
+    const start = Date.now();
+    const setLoadingAfterMin = (value: boolean) => {
+      const elapsed = Date.now() - start;
+      const remaining = Math.max(0, minLoadingMs - elapsed);
+      if (remaining > 0) {
+        setTimeout(() => setLoading(value), remaining);
+      } else {
+        setLoading(value);
+      }
+    };
+
     const supabase = createClient();
     const {
       data: { user: u },
     } = await supabase.auth.getUser();
     if (!u) {
-      setLoading(false);
+      setLoadingAfterMin(false);
       return;
     }
 
@@ -123,11 +135,11 @@ export function useProfile(autoSaveDelayMs = 600) {
         setSavingsObjectives(DEFAULT_SAVINGS_OBJECTIVES);
         setPeaActions(DEFAULT_PEA_ACTIONS);
         setPeaEtfs(DEFAULT_PEA_ETFS);
-        setLoading(false);
+        setLoadingAfterMin(false);
         return;
       }
       setMessage({ type: "error", text: error.message });
-      setLoading(false);
+      setLoadingAfterMin(false);
       return;
     }
 
@@ -284,7 +296,7 @@ export function useProfile(autoSaveDelayMs = 600) {
     } else {
       setPeaEtfs(DEFAULT_PEA_ETFS);
     }
-    setLoading(false);
+    setLoadingAfterMin(false);
   }, []);
 
   useEffect(() => {

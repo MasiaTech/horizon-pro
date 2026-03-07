@@ -58,6 +58,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { GripVertical, Info, X } from "lucide-react";
 
 const PEA_PLAFOND_EUR = 150_000;
@@ -793,8 +794,44 @@ export default function PEAPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40dvh] items-center justify-center p-8 sm:min-h-[40vh]">
-        <p className="text-muted-foreground">Chargement...</p>
+      <div className="min-h-full w-full p-4 sm:p-6">
+        <Card className="mb-6">
+          <CardHeader>
+            <Skeleton className="h-6 w-64 rounded bg-muted" />
+            <Skeleton className="mt-2 h-4 w-full max-w-[480px] rounded bg-muted" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Skeleton className="h-4 w-40 rounded bg-muted" />
+              <Skeleton className="mt-1 h-8 w-28 rounded bg-muted" />
+            </div>
+            <div>
+              <Skeleton className="h-4 w-32 rounded bg-muted" />
+              <Skeleton className="mt-1 h-8 w-24 rounded bg-muted" />
+              <Skeleton className="mt-2 h-3 w-56 rounded bg-muted" />
+            </div>
+            <Skeleton className="h-24 w-full rounded bg-muted" />
+          </CardContent>
+        </Card>
+        <div className="grid gap-6 sm:grid-cols-2">
+          {[1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-6 w-28 rounded bg-muted" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {[1, 2, 3, 4].map((r) => (
+                    <div key={r} className="flex items-center justify-between gap-2">
+                      <Skeleton className="h-4 w-24 rounded bg-muted" />
+                      <Skeleton className="h-4 w-16 rounded bg-muted" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }

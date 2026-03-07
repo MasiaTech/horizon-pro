@@ -63,6 +63,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const INTEREST_FREQUENCY_LABELS: Record<InterestFrequency, string> = {
   daily: "Par jour",
@@ -619,8 +620,46 @@ export default function EpargnePage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40dvh] items-center justify-center p-8 sm:min-h-[40vh]">
-        <p className="text-muted-foreground">Chargement...</p>
+      <div className="min-h-full w-full p-4 sm:p-6">
+        <Card className="mb-6">
+          <CardHeader>
+            <Skeleton className="h-6 w-52 rounded bg-muted" />
+            <Skeleton className="mt-2 h-4 w-full max-w-[400px] rounded bg-muted" />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Skeleton className="h-8 w-28 rounded bg-muted" />
+            <Skeleton className="h-4 w-56 rounded bg-muted" />
+          </CardContent>
+        </Card>
+        <div className="mb-6 space-y-6">
+          <Skeleton className="h-6 w-24 rounded bg-muted" />
+          {[1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-6 w-36 rounded bg-muted" />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Skeleton className="h-[200px] w-full rounded bg-muted" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <Card>
+          <CardHeader className="pb-2">
+            <Skeleton className="h-6 w-40 rounded bg-muted" />
+            <Skeleton className="mt-2 h-4 w-64 rounded bg-muted" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {[1, 2, 3].map((r) => (
+                <div key={r} className="flex items-center justify-between gap-2">
+                  <Skeleton className="h-4 w-28 rounded bg-muted" />
+                  <Skeleton className="h-4 w-20 rounded bg-muted" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

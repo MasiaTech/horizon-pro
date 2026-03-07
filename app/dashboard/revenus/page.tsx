@@ -47,6 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const EMPTY_DRAFT: IncomeSource = { name: "", type: "fixed", amount: 0 };
 
@@ -763,8 +764,39 @@ export default function RevenusPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[40dvh] items-center justify-center p-8 sm:min-h-[40vh]">
-        <p className="text-muted-foreground">Chargement...</p>
+      <div className="min-h-full w-full p-4 sm:p-6">
+        <Skeleton className="h-8 w-48 rounded bg-muted" />
+        <Skeleton className="mt-2 h-4 w-72 rounded bg-muted" />
+        <div className="mt-6 space-y-6">
+          {[1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-6 w-36 rounded bg-muted" />
+                <Skeleton className="mt-2 h-4 w-24 rounded bg-muted" />
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto rounded-md border border-border">
+                  <div className="min-w-[580px] space-y-3 p-2">
+                    <div className="flex gap-4 border-b border-border pb-2">
+                      <Skeleton className="h-4 w-8 rounded bg-muted" />
+                      <Skeleton className="h-4 flex-1 rounded bg-muted" />
+                      <Skeleton className="h-4 w-16 rounded bg-muted" />
+                      <Skeleton className="h-4 w-20 rounded bg-muted" />
+                    </div>
+                    {[1, 2, 3, 4].map((r) => (
+                      <div key={r} className="flex items-center gap-4">
+                        <Skeleton className="size-5 rounded bg-muted" />
+                        <Skeleton className="h-4 w-32 rounded bg-muted" />
+                        <Skeleton className="h-4 w-20 rounded bg-muted" />
+                        <Skeleton className="h-4 w-16 rounded bg-muted" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }

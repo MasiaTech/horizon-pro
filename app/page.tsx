@@ -66,7 +66,14 @@ export default function HomePage() {
       <header className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
           <Logo size={36} href="/" className="shrink-0" />
-          <nav className="flex items-center gap-3">
+          {/* Mobile : un seul gros bouton Connexion / Inscription */}
+          <div className="sm:hidden">
+            <Button asChild size="lg" className="min-w-[180px]">
+              <Link href="/login">Connexion / Inscription</Link>
+            </Button>
+          </div>
+          {/* Desktop : Connexion + Inscription séparés */}
+          <nav className="hidden items-center gap-3 sm:flex">
             <Button asChild variant="ghost" size="sm">
               <Link href="/login">Connexion</Link>
             </Button>
