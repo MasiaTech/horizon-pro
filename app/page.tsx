@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { HomeDemoSummaryCards } from "@/components/HomeDemoSummaryCards";
 import {
   TrendingUp,
   Target,
@@ -147,7 +148,7 @@ export default function HomePage() {
             Comment Horizon vous aide
           </h2>
           <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+            <div className="rounded-xl bg-card p-6 text-center shadow-sm">
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/15 text-primary">
                 <Wallet className="size-7" />
               </div>
@@ -163,7 +164,7 @@ export default function HomePage() {
                 Vous savez combien il vous reste chaque mois.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+            <div className="rounded-xl bg-card p-6 text-center shadow-sm">
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/15 text-primary">
                 <Calculator className="size-7" />
               </div>
@@ -179,7 +180,7 @@ export default function HomePage() {
                 Anticipez votre impôt en France.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+            <div className="rounded-xl bg-card p-6 text-center shadow-sm">
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/15 text-primary">
                 <BarChart3 className="size-7" />
               </div>
@@ -195,7 +196,7 @@ export default function HomePage() {
                 Vous projetez l&apos;avenir.
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-6 text-center shadow-sm">
+            <div className="rounded-xl bg-card p-6 text-center shadow-sm">
               <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-primary/15 text-primary">
                 <Target className="size-7" />
               </div>
@@ -235,7 +236,7 @@ export default function HomePage() {
             ].map((item) => (
               <li
                 key={item}
-                className="flex items-center gap-3 rounded-lg border border-border/60 bg-card/50 py-3 px-4"
+                className="flex items-center gap-3 rounded-lg bg-card py-3 px-4 shadow-sm"
               >
                 <Check className="size-5 shrink-0 text-primary" />
                 <span className="text-foreground">{item}</span>
@@ -255,7 +256,7 @@ export default function HomePage() {
             Courbes, répartition, reste à investir : tout est visuel.
           </p>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-border bg-card p-4">
+            <div className="rounded-xl bg-card p-4 shadow-sm">
               <div className="flex h-24 items-end justify-around gap-1 rounded-md bg-muted/30 px-2 py-2">
                 {[20, 35, 28, 45, 55, 70, 65, 85, 80, 95].map((h, i) => (
                   <div
@@ -269,7 +270,7 @@ export default function HomePage() {
                 Courbe PEA → 150 k€
               </p>
             </div>
-            <div className="rounded-xl border border-border bg-card p-4">
+            <div className="rounded-xl bg-card p-4 shadow-sm">
               <div className="flex h-24 items-end justify-around gap-1 rounded-md bg-muted/30 px-2 py-2">
                 {[15, 22, 32, 42, 55, 68, 78, 88, 95, 100].map((h, i) => (
                   <div
@@ -294,11 +295,20 @@ export default function HomePage() {
                 Répartition Épargne / PEA
               </p>
             </div>
-            <div className="rounded-xl border-2 border-primary/40 bg-primary/10 p-4 flex flex-col justify-center">
+            <div className="rounded-xl bg-card p-4 shadow-sm flex flex-col justify-center ring-1 ring-primary/30">
               <p className="text-xs font-medium text-muted-foreground">Reste à investir</p>
               <p className="mt-1 text-2xl font-bold tabular-nums text-primary">1 240 €</p>
               <p className="text-xs text-muted-foreground">chaque mois</p>
             </div>
+          </div>
+          <div className="mt-12">
+            <p className="text-center text-sm font-medium text-muted-foreground mb-4">
+              Aperçu des lignes Total placements (PEA, Épargne) — comme dans le dashboard
+            </p>
+            <HomeDemoSummaryCards />
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              Cliquez sur la flèche pour afficher ou masquer le détail.
+            </p>
           </div>
         </div>
       </section>
@@ -321,7 +331,7 @@ export default function HomePage() {
             ].map(({ icon: Icon, label }) => (
               <li
                 key={label}
-                className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground"
+                className="flex items-center gap-2 rounded-lg bg-card px-4 py-3 text-sm text-foreground shadow-sm"
               >
                 <Icon className="size-4 shrink-0 text-primary" />
                 {label}
@@ -349,7 +359,7 @@ export default function HomePage() {
             ].map(({ icon: Icon, text }) => (
               <div
                 key={text}
-                className="flex items-center gap-4 rounded-xl border border-border bg-card p-4"
+                className="flex items-center gap-4 rounded-xl bg-card p-4 shadow-sm"
               >
                 <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
                   <Icon className="size-5" />
