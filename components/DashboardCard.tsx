@@ -52,7 +52,7 @@ export function DashboardCard({
   className,
 }: DashboardCardProps) {
   const cardClass = [
-    "relative",
+    "relative h-full",
     CARD_MIN_HEIGHT,
     iconSrc && "flex flex-col overflow-visible",
     dimmed && "opacity-75",
@@ -124,7 +124,11 @@ export function DashboardCard({
   const card = <Card className={cardClass}>{cardInner}</Card>;
 
   if (iconSrc) {
-    return <div className={`${CARD_MIN_HEIGHT} overflow-visible`}>{card}</div>;
+    return (
+      <div className={`h-full min-h-0 ${CARD_MIN_HEIGHT} overflow-visible`}>
+        {card}
+      </div>
+    );
   }
 
   return card;

@@ -197,7 +197,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="min-h-full w-full p-4 sm:p-6">
-        <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
+        <div className="grid gap-6 lg:gap-8 lg:grid-cols-2 lg:items-stretch [&>*]:min-h-0 [&>*]:lg:h-full">
           {Array.from({ length: 8 }).map((_, i) => (
             <Card
               key={i}
@@ -224,7 +224,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-full w-full p-4 sm:p-6">
-      <div className="grid gap-6 lg:gap-8 lg:grid-cols-2">
+      <div className="grid gap-6 lg:gap-8 lg:grid-cols-2 lg:items-stretch [&>*]:min-h-0 [&>*]:lg:h-full">
         <DashboardCard
           title="Total revenus"
           description="Somme de toutes vos sources de revenus (configurées dans Revenus)."
