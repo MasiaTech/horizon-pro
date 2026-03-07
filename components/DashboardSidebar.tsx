@@ -9,11 +9,12 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LogOut, ChevronsUpDown, LayoutDashboard, Wallet, CreditCard, PiggyBank, TrendingUp, Settings, Calculator } from "lucide-react";
+import { ChevronsUpDown, LayoutDashboard, Wallet, CreditCard, PiggyBank, TrendingUp, Calculator } from "lucide-react";
 import { useProfileContext } from "@/components/ProfileProvider";
 import { getExpenseAmount, getIncomeAmount } from "@/lib/types";
 
@@ -25,7 +26,7 @@ type User = {
 
 const linkClass = (active: boolean) =>
   `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
-    active ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+    active ? "bg-card text-primary" : "text-muted-foreground hover:bg-muted/40 hover:text-primary/70"
   }`;
 
 /**
@@ -81,11 +82,11 @@ function DashboardSidebarContent({ onLinkClick }: { onLinkClick?: () => void }) 
 
   return (
     <>
-      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-4">
+      <div className="flex h-14 shrink-0 items-center gap-2 px-4">
         <Logo size={32} href="/" />
         <span className="font-semibold tracking-tight">Horizon</span>
       </div>
-      <nav className="flex-1 space-y-1 overflow-auto p-2">
+      <nav className="flex-1 space-y-1 overflow-auto px-2 pb-2 pt-4 sm:pt-6">
         <Link href="/dashboard" className={linkClass(pathname === "/dashboard")} onClick={onLinkClick}>
           <LayoutDashboard className="size-4 shrink-0" />
           <span>Dashboard</span>
@@ -132,7 +133,7 @@ function DashboardSidebarContent({ onLinkClick }: { onLinkClick?: () => void }) 
           </>
         )}
       </nav>
-      <div className="border-t border-border p-2">
+      <div className="p-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -155,19 +156,18 @@ function DashboardSidebarContent({ onLinkClick }: { onLinkClick?: () => void }) 
               <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-50" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="top" className="w-56">
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="cursor-pointer focus:text-destructive"
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Déconnexion
-            </DropdownMenuItem>
+          <DropdownMenuContent align="start" side="top" className="w-56 border-0 bg-card shadow-sm">
             <DropdownMenuItem asChild>
               <Link href="/dashboard/parametres" className="cursor-pointer" onClick={onLinkClick}>
-                <Settings className="mr-2 h-4 w-4" />
                 Paramètres
               </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-white/20" />
+            <DropdownMenuItem
+              onClick={handleLogout}
+              className="cursor-pointer text-destructive focus:text-destructive"
+            >
+              Déconnexion
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -181,7 +181,7 @@ function DashboardSidebarContent({ onLinkClick }: { onLinkClick?: () => void }) 
  */
 export default function DashboardSidebar() {
   return (
-    <aside className="hidden h-[100dvh] w-56 shrink-0 flex-col border-r border-border bg-card lg:flex lg:h-screen">
+    <aside className="hidden h-[100dvh] w-56 shrink-0 flex-col bg-transparent lg:flex lg:h-screen">
       <DashboardSidebarContent />
     </aside>
   );

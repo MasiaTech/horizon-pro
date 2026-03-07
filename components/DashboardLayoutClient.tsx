@@ -30,7 +30,7 @@ export default function DashboardLayoutClient({
       <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
         <SheetContent
           side="left"
-          className="flex h-full min-h-[100dvh] w-56 flex-col gap-0 p-0 sm:min-h-0"
+          className="flex h-full min-h-[100dvh] w-56 flex-col gap-0 border-0 bg-transparent p-0 shadow-none sm:min-h-0"
           aria-describedby={undefined}
         >
           <SheetTitle className="sr-only">Menu de navigation</SheetTitle>
