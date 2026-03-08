@@ -2,22 +2,10 @@
 
 import { useEffect, useRef, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import {
-  DndContext,
-  closestCenter,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  useSortable,
-  arrayMove,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { FinanceAreaChart } from "@/components/FinanceAreaChart";
+import { SummaryCardRow } from "@/components/SummaryCardRow";
 import { useProfileContext } from "@/components/ProfileProvider";
 import { updatePEAHolding } from "@/lib/useProfile";
-import { useSortableSensors } from "@/lib/dnd-sensors";
 import { clampPercent } from "@/lib/utils";
 import {
   getExpenseAmount,
@@ -44,12 +32,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { GripVertical, Info, X } from "lucide-react";
+import { BarChart3, MoreVertical, Plus, TrendingUp } from "lucide-react";
 
 const PEA_PLAFOND_EUR = 150_000;
 
@@ -193,468 +183,236 @@ function formatYearAxisLabel(month: number): string {
   return `${years} an${years > 1 ? "s" : ""} ${months} m`;
 }
 
-function isDraftEmpty(d: PEAHolding): boolean {
-  return (
-    d.name.trim() === "" && (d.quantity ?? 0) === 0 && (d.price ?? 0) === 0
-  );
-}
-
-/** Montant des dividendes par an pour une ligne (valeur × taux % / 100). */
 /** Montant dividendes/an pour une ligne. Vide ou 0 % = pas de dividende. */
 function getPEAHoldingAnnualDividend(h: PEAHolding): number {
   if ((h.dividendPercentPerYear ?? 0) <= 0) return 0;
   return getPEAHoldingValue(h) * ((h.dividendPercentPerYear ?? 0) / 100);
 }
 
-/** Ligne déplaçable (drag handle + contenu) */
-function SortableHoldingRow({
-  h,
-  index,
+type PEASection = "actions" | "etf";
+
+/** Bloc dépliable Actions ou ETF : SummaryCardRow + lignes avec menu ... + bouton Ajouter */
+function PEAHoldingsSection({
+  section,
+  title,
+  icon,
+  items,
   setItems,
-  onRequestRemove,
+  expanded,
+  onToggleExpand,
+  onAdd,
+  onEdit,
+  onRequestDelete,
 }: {
-  h: PEAHolding;
-  index: number;
+  section: PEASection;
+  title: string;
+  icon: React.ReactNode;
+  items: PEAHolding[];
   setItems: React.Dispatch<React.SetStateAction<PEAHolding[]>>;
-  onRequestRemove: (index: number, label: string) => void;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  onAdd: () => void;
+  onEdit: (index: number) => void;
+  onRequestDelete: (index: number, label: string) => void;
 }) {
-  const id = `holding-${index}`;
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
+  const totalValue = items.reduce((s, h) => s + getPEAHoldingValue(h), 0);
+  const totalDiv = items.reduce((s, h) => s + getPEAHoldingAnnualDividend(h), 0);
   return (
-    <tr
-      ref={setNodeRef}
-      style={style}
-      className="border-b border-border last:border-b-0 hover:bg-muted/30"
+    <SummaryCardRow
+      icon={icon}
+      title={title}
+      subtitle={`${items.length} ligne(s)${totalDiv > 0 ? ` · Div./an ${totalDiv.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €` : ""}`}
+      value={`${totalValue.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`}
+      expandable
+      expanded={expanded}
+      onToggleExpand={onToggleExpand}
+      expandAriaLabel={`Afficher le détail ${title}`}
     >
-      <td
-        className="w-8 cursor-grab touch-none px-1 py-2 text-muted-foreground active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-4 w-4" />
-      </td>
-      <td className="px-4 py-2">
-        <Input
-          value={h.name}
-          onChange={(e) =>
-            updatePEAHolding(setItems, index, "name", e.target.value)
-          }
-          placeholder="Ex. TotalEnergies"
-          className="h-9 min-w-[120px] border-0 bg-transparent shadow-none focus-visible:ring-1"
-        />
-      </td>
-      <td className="px-4 py-2 text-right align-middle">
-        <div className="flex justify-end">
-          <NumberInput
-            value={h.quantity}
-            onChange={(n) =>
-              updatePEAHolding(setItems, index, "quantity", n)
-            }
-            placeholder="0"
-            className="h-9 w-20 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
-          />
-        </div>
-      </td>
-      <td className="px-4 py-2 text-right align-middle">
-        <div className="flex justify-end">
-          <NumberInput
-            value={h.price}
-            onChange={(n) => updatePEAHolding(setItems, index, "price", n)}
-            placeholder="0"
-            className="h-9 w-24 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
-          />
-        </div>
-      </td>
-      <td className="px-4 py-2 text-right align-middle">
-        <div className="flex justify-end">
-          <NumberInput
-            value={h.dividendPercentPerYear ?? 0}
-            onChange={(n) =>
-              updatePEAHolding(setItems, index, "dividendPercentPerYear", clampPercent(n))
-            }
-            placeholder="0"
-            className="h-9 w-16 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
-          />
-        </div>
-      </td>
-      <td className="px-4 py-2 text-right align-middle">
-        <div className="flex justify-end">
-          <NumberInput
-            value={h.roePercent ?? 0}
-            onChange={(n) =>
-              updatePEAHolding(setItems, index, "roePercent", clampPercent(n))
-            }
-            placeholder="0"
-            className="h-9 w-16 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
-          />
-        </div>
-      </td>
-      <td className="px-4 py-2 text-right align-middle text-muted-foreground">
-        {getPEAHoldingValue(h).toLocaleString("fr-FR", {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        })}{" "}
-        €
-      </td>
-      <td className="px-4 py-2 text-right align-middle text-muted-foreground">
-        {(h.dividendPercentPerYear ?? 0) > 0
-          ? getPEAHoldingAnnualDividend(h).toLocaleString("fr-FR", {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2,
-            }) + " €"
-          : "—"}
-      </td>
-      <td className="px-2 py-2">
-        <Button
+      <div className="space-y-2">
+        {items.map((h, index) => {
+          const name = h.name?.trim() || "Sans nom";
+          const initials = name.length >= 2 ? name.slice(0, 2).toUpperCase() : name.slice(0, 1).toUpperCase() || "—";
+          const priceStr = Number(h.price).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const valueStr = getPEAHoldingValue(h).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          return (
+          <div
+            key={`${h.name}-${index}`}
+            className="flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2.5"
+          >
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary">
+              {initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-medium text-foreground truncate">{name}</p>
+              <p className="mt-0.5 text-xs tabular-nums text-muted-foreground">
+                {h.quantity} · {priceStr} €
+              </p>
+            </div>
+            <div className="shrink-0 text-right tabular-nums font-semibold text-foreground">
+              {valueStr} €
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground shrink-0"
+                  aria-label="Menu ligne"
+                >
+                  <MoreVertical className="size-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 border-0 bg-card shadow-sm">
+                <DropdownMenuItem onClick={() => onEdit(index)} className="cursor-pointer">
+                  Modifier
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-white/20" />
+                <DropdownMenuItem
+                  onClick={() => onRequestDelete(index, h.name || `Ligne ${index + 1}`)}
+                  className="cursor-pointer text-destructive focus:text-destructive"
+                >
+                  Supprimer
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+          );
+        })}
+        <button
           type="button"
-          variant="ghost"
-          size="icon"
-          onClick={() =>
-            onRequestRemove(index, h.name || `Ligne ${index + 1}`)
-          }
-          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-          title="Supprimer"
-          aria-label="Supprimer"
+          onClick={onAdd}
+          className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-muted-foreground/30 py-2 text-sm text-muted-foreground transition-colors hover:border-primary/50 hover:bg-muted/30 hover:text-foreground"
         >
-          <X className="h-4 w-4" />
-        </Button>
-      </td>
-    </tr>
+          <Plus className="size-4" />
+          Ajouter une ligne
+        </button>
+      </div>
+    </SummaryCardRow>
   );
 }
 
-/** Tableau des lignes (Actions ou ETF) avec ligne brouillon et suppression avec confirmation */
-function HoldingsTable({
-  title,
-  items,
-  setItems,
+/** Dialog : créer ou modifier une ligne Action / ETF */
+function HoldingDialog({
+  open,
+  onOpenChange,
+  mode,
+  section,
+  initialHolding,
+  onSubmit,
+  onUpdate,
+  editIndex,
 }: {
-  title: string;
-  items: PEAHolding[];
-  setItems: React.Dispatch<React.SetStateAction<PEAHolding[]>>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  mode: "create" | "edit";
+  section: PEASection;
+  initialHolding: PEAHolding;
+  onSubmit?: (h: PEAHolding) => void;
+  onUpdate?: (index: number, field: keyof PEAHolding, value: string | number | boolean) => void;
+  editIndex?: number;
 }) {
-  const [draft, setDraft] = useState<PEAHolding>(EMPTY_HOLDING);
-  const [confirmDelete, setConfirmDelete] = useState<{
-    index: number;
-    label: string;
-  } | null>(null);
+  const [holding, setHolding] = useState<PEAHolding>(initialHolding);
+  useEffect(() => {
+    if (open) setHolding(initialHolding);
+  }, [open, initialHolding]);
 
-  const handleDraftChange = (
-    field: keyof PEAHolding,
-    value: string | number | boolean,
-  ) => {
-    setDraft((prev) => {
+  const handleChange = (field: keyof PEAHolding, value: string | number | boolean) => {
+    setHolding((prev) => {
       const next = { ...prev };
       if (field === "name") next.name = String(value);
       else if (field === "quantity") next.quantity = Number(value) || 0;
       else if (field === "price") next.price = Number(value) || 0;
-      else if (field === "dividendEnabled")
-        next.dividendEnabled = Boolean(value);
+      else if (field === "dividendEnabled") next.dividendEnabled = Boolean(value);
       else if (field === "dividendPercentPerYear")
-        next.dividendPercentPerYear =
-          value === "" || value == null ? undefined : clampPercent(Number(value) || 0);
+        next.dividendPercentPerYear = value === "" || value == null ? undefined : clampPercent(Number(value) || 0);
       else if (field === "roePercent")
-        next.roePercent =
-          value === "" || value == null ? undefined : clampPercent(Number(value) || 0);
+        next.roePercent = value === "" || value == null ? undefined : clampPercent(Number(value) || 0);
       return next;
     });
   };
 
-  const handleDraftBlur = () => {
-    if (isDraftEmpty(draft)) return;
-    setItems((prev) => [
-      ...prev,
-      { ...draft, name: draft.name.trim() || draft.name },
-    ]);
-    setDraft(EMPTY_HOLDING);
+  const submit = () => {
+    const pct = holding.dividendPercentPerYear ?? 0;
+    const trimmed = {
+      ...holding,
+      name: (holding.name || "").trim(),
+      dividendPercentPerYear: pct,
+      dividendEnabled: pct > 0,
+    };
+    if (mode === "create" && onSubmit) {
+      onSubmit(trimmed);
+      onOpenChange(false);
+    } else if (mode === "edit" && onUpdate && editIndex !== undefined) {
+      onUpdate(editIndex, "name", trimmed.name);
+      onUpdate(editIndex, "quantity", trimmed.quantity);
+      onUpdate(editIndex, "price", trimmed.price);
+      onUpdate(editIndex, "dividendEnabled", trimmed.dividendEnabled);
+      onUpdate(editIndex, "dividendPercentPerYear", trimmed.dividendPercentPerYear ?? 0);
+      onUpdate(editIndex, "roePercent", trimmed.roePercent ?? 0);
+      onOpenChange(false);
+    }
   };
 
-  const removeAt = (index: number) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-    setConfirmDelete(null);
-  };
-
-  const sensors = useSortableSensors();
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const activeStr = String(active.id);
-    const overStr = String(over.id);
-    if (!activeStr.startsWith("holding-") || !overStr.startsWith("holding-"))
-      return;
-    const oldIndex = parseInt(activeStr.replace("holding-", ""), 10);
-    const newIndex = parseInt(overStr.replace("holding-", ""), 10);
-    if (Number.isNaN(oldIndex) || Number.isNaN(newIndex)) return;
-    setItems((prev) => arrayMove(prev, oldIndex, newIndex));
-  };
-
-  const rowIds = items.map((_, i) => `holding-${i}`);
-
+  const sectionLabel = section === "actions" ? "Action" : "ETF";
   return (
-    <>
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>
-            Nom, quantité, prix. Dividendes %/an : laisser vide si pas de
-            dividende. ROE (%/an) : estimation de croissance (composition
-            annuelle).
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto rounded-md border border-border">
-            <table className="w-full min-w-[640px] table-fixed text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="w-8 px-1 py-2" aria-hidden />
-                  <th className="w-[30%] px-4 py-2 text-left font-medium">
-                    Nom
-                  </th>
-                  <th className="w-[80px] px-4 py-2 text-right font-medium">
-                    Quantité
-                  </th>
-                  <th className="w-[100px] px-4 py-2 text-right font-medium">
-                    Prix (€)
-                  </th>
-                  <th className="w-[80px] px-4 py-2 text-right font-medium">
-                    <span className="inline-flex items-center justify-end gap-1">
-                      Dividendes %/an
-                      <HoverCard openDelay={200} closeDelay={100}>
-                        <HoverCardTrigger asChild>
-                          <span
-                            className="inline-flex text-muted-foreground hover:text-foreground"
-                            aria-label="Explication Dividendes %/an"
-                          >
-                            <Info
-                              className="h-3.5 w-3.5 shrink-0"
-                              aria-hidden
-                            />
-                          </span>
-                        </HoverCardTrigger>
-                        <HoverCardContent
-                          side="top"
-                          align="center"
-                          className="w-72 text-sm"
-                        >
-                          <p className="text-muted-foreground">
-                            Taux de dividende annuel estimé en %. Si ce titre
-                            verse des dividendes, indiquez le rendement annuel
-                            (ex. 4 pour 4 %). Laisser vide ou 0 si pas de
-                            dividende.
-                          </p>
-                        </HoverCardContent>
-                      </HoverCard>
-                    </span>
-                  </th>
-                  <th className="w-[80px] px-4 py-2 text-right font-medium">
-                    <span className="inline-flex items-center justify-end gap-1">
-                      ROE (%/an)
-                      <HoverCard openDelay={200} closeDelay={100}>
-                        <HoverCardTrigger asChild>
-                          <span
-                            className="inline-flex text-muted-foreground hover:text-foreground"
-                            aria-label="Explication ROE"
-                          >
-                            <Info
-                              className="h-3.5 w-3.5 shrink-0"
-                              aria-hidden
-                            />
-                          </span>
-                        </HoverCardTrigger>
-                        <HoverCardContent
-                          side="top"
-                          align="center"
-                          className="w-72 text-sm"
-                        >
-                          <p className="text-muted-foreground">
-                            <strong className="text-foreground">
-                              Return on Equity
-                            </strong>{" "}
-                            : taux de croissance annuel estimé de
-                            l&apos;investissement (composition). Ex. 20 % : 1
-                            000 € deviennent 1 200 € après 1 an, puis 1 440 €
-                            après 2 ans.
-                          </p>
-                        </HoverCardContent>
-                      </HoverCard>
-                    </span>
-                  </th>
-                  <th className="w-[100px] px-4 py-2 text-right font-medium">
-                    Valeur
-                  </th>
-                  <th className="w-[100px] px-4 py-2 text-right font-medium">
-                    Dividendes/an (€)
-                  </th>
-                  <th className="w-10 px-2 py-2" aria-hidden />
-                </tr>
-              </thead>
-              <tbody>
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={rowIds}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {items.map((h, index) => (
-                      <SortableHoldingRow
-                        key={`${h.name}-${index}`}
-                        h={h}
-                        index={index}
-                        setItems={setItems}
-                        onRequestRemove={(idx, label) =>
-                          setConfirmDelete({ index: idx, label })
-                        }
-                      />
-                    ))}
-                  </SortableContext>
-                </DndContext>
-                <tr className="border-b border-border last:border-b-0 hover:bg-muted/30">
-                  <td className="w-8 px-1 py-2" aria-hidden />
-                  <td className="px-4 py-2">
-                    <Input
-                      value={draft.name}
-                      onChange={(e) =>
-                        handleDraftChange("name", e.target.value)
-                      }
-                      onBlur={handleDraftBlur}
-                      placeholder="Ex. TotalEnergies"
-                      className="h-9 min-w-[120px] border-0 bg-transparent shadow-none focus-visible:ring-1"
-                    />
-                  </td>
-                  <td className="px-4 py-2 text-right align-middle">
-                    <div className="flex justify-end">
-                      <NumberInput
-                        value={draft.quantity}
-                        onChange={(n) => handleDraftChange("quantity", n)}
-                        onBlur={handleDraftBlur}
-                        placeholder="0"
-                        className="h-9 w-20 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-right align-middle">
-                    <div className="flex justify-end">
-                      <NumberInput
-                        value={draft.price}
-                        onChange={(n) => handleDraftChange("price", n)}
-                        onBlur={handleDraftBlur}
-                        placeholder="0"
-                        className="h-9 w-24 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-right align-middle">
-                    <div className="flex justify-end">
-                      <NumberInput
-                        value={draft.dividendPercentPerYear ?? 0}
-                        onChange={(n) =>
-                          handleDraftChange("dividendPercentPerYear", clampPercent(n))
-                        }
-                        onBlur={handleDraftBlur}
-                        placeholder="0"
-                        className="h-9 w-16 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-right align-middle">
-                    <div className="flex justify-end">
-                      <NumberInput
-                        value={draft.roePercent ?? 0}
-                        onChange={(n) => handleDraftChange("roePercent", clampPercent(n))}
-                        onBlur={handleDraftBlur}
-                        placeholder="0"
-                        className="h-9 w-16 border-0 bg-transparent text-right shadow-none focus-visible:ring-1"
-                      />
-                    </div>
-                  </td>
-                  <td className="px-4 py-2 text-right align-middle text-muted-foreground">
-                    —
-                  </td>
-                  <td className="px-4 py-2 text-right align-middle text-muted-foreground">
-                    —
-                  </td>
-                  <td className="w-10 px-2 py-2" aria-hidden />
-                </tr>
-                {items.length > 0 &&
-                  (() => {
-                    const totalDividends = items.reduce(
-                      (s, h) => s + getPEAHoldingAnnualDividend(h),
-                      0,
-                    );
-                    if (totalDividends <= 0) return null;
-                    return (
-                      <tr className="border-t-2 border-border bg-muted/40 font-medium">
-                        <td className="px-4 py-2" colSpan={6} />
-                        <td className="px-4 py-2 text-right text-foreground">
-                          Total dividendes/an :
-                        </td>
-                        <td className="px-4 py-2 text-right text-foreground">
-                          {totalDividends.toLocaleString("fr-FR", {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}{" "}
-                          €
-                        </td>
-                        <td className="w-10 px-2 py-2" aria-hidden />
-                      </tr>
-                    );
-                  })()}
-              </tbody>
-            </table>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {mode === "create" ? `Nouvelle ligne ${sectionLabel}` : "Modifier la ligne"}
+          </DialogTitle>
+          <DialogDescription>
+            Nom, quantité, prix. Dividendes %/an : laisser vide si pas de dividende. ROE (%/an) : estimation de croissance (composition annuelle).
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Nom</label>
+            <Input
+              value={holding.name}
+              onChange={(e) => handleChange("name", e.target.value)}
+              placeholder="Ex. TotalEnergies"
+              className="h-10"
+            />
           </div>
-        </CardContent>
-      </Card>
-
-      <Dialog
-        open={confirmDelete !== null}
-        onOpenChange={() => setConfirmDelete(null)}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Supprimer la ligne</DialogTitle>
-            <DialogDescription>
-              Supprimer « {confirmDelete?.label} » ? Cette action est
-              irréversible.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setConfirmDelete(null)}
-            >
-              Annuler
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() =>
-                confirmDelete != null && removeAt(confirmDelete.index)
-              }
-            >
-              Supprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Quantité</label>
+              <NumberInput value={holding.quantity} onChange={(n) => handleChange("quantity", n)} placeholder="0" className="h-10" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Prix (€)</label>
+              <NumberInput value={holding.price} onChange={(n) => handleChange("price", n)} placeholder="0" className="h-10" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Dividendes (%/an)</label>
+            <NumberInput
+              value={holding.dividendPercentPerYear ?? 0}
+              onChange={(n) => handleChange("dividendPercentPerYear", clampPercent(n))}
+              placeholder="0 si pas de dividende"
+              className="h-10"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">ROE (%/an)</label>
+            <p className="text-xs text-muted-foreground">Croissance annuelle estimée (composition). Ex. 20 % : 1 000 € → 1 200 € après 1 an.</p>
+            <NumberInput
+              value={holding.roePercent ?? 0}
+              onChange={(n) => handleChange("roePercent", clampPercent(n))}
+              placeholder="0 si pas de croissance"
+              className="h-10"
+            />
+          </div>
+        </div>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
+          <Button type="button" onClick={submit}>{mode === "create" ? "Ajouter" : "Enregistrer"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
+
 
 export default function PEAPage() {
   const router = useRouter();
@@ -675,6 +433,16 @@ export default function PEAPage() {
 
   const dataRef = useRef({ peaActions, peaEtfs });
   dataRef.current = { peaActions, peaEtfs };
+
+  const [expandedSections, setExpandedSections] = useState({ actions: true, etf: true });
+  const [holdingDialog, setHoldingDialog] = useState<
+    null | { mode: "create"; section: PEASection } | { mode: "edit"; section: PEASection; index: number }
+  >(null);
+  const [confirmDeleteHolding, setConfirmDeleteHolding] = useState<{
+    section: PEASection;
+    index: number;
+    label: string;
+  } | null>(null);
 
   const totalIncome = incomeSources.reduce(
     (sum, s) => sum + getIncomeAmount(s),
@@ -990,56 +758,137 @@ export default function PEAPage() {
         </CardContent>
       </Card>
 
-      <HoldingsTable
-        title="Actions"
-        items={peaActions}
-        setItems={setPeaActions}
-      />
-      <HoldingsTable title="ETF" items={peaEtfs} setItems={setPeaEtfs} />
+      <div className="space-y-3">
+        <PEAHoldingsSection
+          section="actions"
+          title="Actions"
+          icon={<TrendingUp className="size-5" />}
+          items={peaActions}
+          setItems={setPeaActions}
+          expanded={expandedSections.actions}
+          onToggleExpand={() => setExpandedSections((p) => ({ ...p, actions: !p.actions }))}
+          onAdd={() => setHoldingDialog({ mode: "create", section: "actions" })}
+          onEdit={(index) => setHoldingDialog({ mode: "edit", section: "actions", index })}
+          onRequestDelete={(index, label) => setConfirmDeleteHolding({ section: "actions", index, label })}
+        />
+        <PEAHoldingsSection
+          section="etf"
+          title="ETF"
+          icon={<BarChart3 className="size-5" />}
+          items={peaEtfs}
+          setItems={setPeaEtfs}
+          expanded={expandedSections.etf}
+          onToggleExpand={() => setExpandedSections((p) => ({ ...p, etf: !p.etf }))}
+          onAdd={() => setHoldingDialog({ mode: "create", section: "etf" })}
+          onEdit={(index) => setHoldingDialog({ mode: "edit", section: "etf", index })}
+          onRequestDelete={(index, label) => setConfirmDeleteHolding({ section: "etf", index, label })}
+        />
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Avantages fiscaux du PEA</CardTitle>
+            <CardDescription>
+              Après 5 ans de détention, les gains (plus-values et revenus) sont
+              exonérés d&apos;impôt sur le revenu.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <ul className="list-inside list-disc space-y-2 text-muted-foreground">
+              <li>
+                <strong className="text-foreground">
+                  Exonération d&apos;impôt sur le revenu
+                </strong>{" "}
+                : après 5 ans, les plus-values et dividendes ne sont pas imposés à
+                l&apos;IR.
+              </li>
+              <li>
+                <strong className="text-foreground">Prélèvements sociaux</strong>{" "}
+                : les prélèvements sociaux (17,2 %) peuvent s&apos;appliquer au
+                moment du retrait selon la date d&apos;ouverture du PEA. À
+                vérifier selon votre situation.
+              </li>
+              <li>
+                <strong className="text-foreground">Un seul PEA</strong> : vous ne
+                pouvez avoir qu&apos;un seul PEA. Le plafond de 150 000 € est
+                global (versements cumulés depuis l&apos;ouverture).
+              </li>
+              <li>
+                <strong className="text-foreground">
+                  Pas de sortie avant 5 ans
+                </strong>{" "}
+                : un retrait avant 5 ans entraîne la clôture du PEA et une
+                imposition des gains. Au-delà de 5 ans, vous pouvez effectuer des
+                retraits sans clôturer le plan.
+              </li>
+            </ul>
+            <p className="text-xs text-muted-foreground">
+              Ces informations sont données à titre indicatif. Consultez le site
+              des impôts ou un conseiller pour votre situation.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
 
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Avantages fiscaux du PEA</CardTitle>
-          <CardDescription>
-            Après 5 ans de détention, les gains (plus-values et revenus) sont
-            exonérés d&apos;impôt sur le revenu.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <ul className="list-inside list-disc space-y-2 text-muted-foreground">
-            <li>
-              <strong className="text-foreground">
-                Exonération d&apos;impôt sur le revenu
-              </strong>{" "}
-              : après 5 ans, les plus-values et dividendes ne sont pas imposés à
-              l&apos;IR.
-            </li>
-            <li>
-              <strong className="text-foreground">Prélèvements sociaux</strong>{" "}
-              : les prélèvements sociaux (17,2 %) peuvent s&apos;appliquer au
-              moment du retrait selon la date d&apos;ouverture du PEA. À
-              vérifier selon votre situation.
-            </li>
-            <li>
-              <strong className="text-foreground">Un seul PEA</strong> : vous ne
-              pouvez avoir qu&apos;un seul PEA. Le plafond de 150 000 € est
-              global (versements cumulés depuis l&apos;ouverture).
-            </li>
-            <li>
-              <strong className="text-foreground">
-                Pas de sortie avant 5 ans
-              </strong>{" "}
-              : un retrait avant 5 ans entraîne la clôture du PEA et une
-              imposition des gains. Au-delà de 5 ans, vous pouvez effectuer des
-              retraits sans clôturer le plan.
-            </li>
-          </ul>
-          <p className="text-xs text-muted-foreground">
-            Ces informations sont données à titre indicatif. Consultez le site
-            des impôts ou un conseiller pour votre situation.
-          </p>
-        </CardContent>
-      </Card>
+      {(holdingDialog?.mode === "create" || holdingDialog?.mode === "edit") && (
+        <HoldingDialog
+          open={true}
+          onOpenChange={(open) => !open && setHoldingDialog(null)}
+          mode={holdingDialog.mode}
+          section={holdingDialog.section}
+          initialHolding={
+            holdingDialog.mode === "create"
+              ? EMPTY_HOLDING
+              : (holdingDialog.section === "actions" ? peaActions[holdingDialog.index] : peaEtfs[holdingDialog.index]) ?? EMPTY_HOLDING
+          }
+          onSubmit={
+            holdingDialog.mode === "create"
+              ? (h) => {
+                  if (holdingDialog.section === "actions") setPeaActions((prev) => [...prev, h]);
+                  else setPeaEtfs((prev) => [...prev, h]);
+                  setHoldingDialog(null);
+                }
+              : undefined
+          }
+          onUpdate={
+            holdingDialog.mode === "edit"
+              ? (index, field, value) => {
+                  const setter = holdingDialog.section === "actions" ? setPeaActions : setPeaEtfs;
+                  updatePEAHolding(setter, index, field, value);
+                }
+              : undefined
+          }
+          editIndex={holdingDialog.mode === "edit" ? holdingDialog.index : undefined}
+        />
+      )}
+
+      <Dialog open={confirmDeleteHolding !== null} onOpenChange={(open) => !open && setConfirmDeleteHolding(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Supprimer la ligne</DialogTitle>
+            <DialogDescription>
+              Supprimer « {confirmDeleteHolding?.label} » ? Cette action est irréversible.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmDeleteHolding(null)}>
+              Annuler
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (confirmDeleteHolding) {
+                  if (confirmDeleteHolding.section === "actions")
+                    setPeaActions((prev) => prev.filter((_, i) => i !== confirmDeleteHolding.index));
+                  else setPeaEtfs((prev) => prev.filter((_, i) => i !== confirmDeleteHolding.index));
+                  setConfirmDeleteHolding(null);
+                }
+              }}
+            >
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

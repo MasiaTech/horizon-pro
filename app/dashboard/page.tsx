@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PiggyBank, TrendingUp } from "lucide-react";
+import { BarChart3, PiggyBank, TrendingUp } from "lucide-react";
 import { SummaryCardRow } from "@/components/SummaryCardRow";
 import {
   Cell,
@@ -593,30 +593,38 @@ export default function DashboardPage() {
                           : "Afficher le détail des actions"
                       }
                     >
-                      <ul className="space-y-1 text-sm">
-                        {peaActions.map((h, i) => (
-                          <li
-                            key={`action-${i}-${h.name}`}
-                            className="flex justify-between gap-2 py-1"
-                          >
-                            <span className="truncate text-muted-foreground">
-                              {h.name || "—"}
-                            </span>
-                            <span className="shrink-0 font-medium tabular-nums text-foreground">
-                              {getPEAHoldingValue(h).toLocaleString("fr-FR", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}{" "}
-                              €
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="space-y-2">
+                        {peaActions.map((h, i) => {
+                          const name = h.name?.trim() || "Sans nom";
+                          const initials = name.length >= 2 ? name.slice(0, 2).toUpperCase() : name.slice(0, 1).toUpperCase() || "—";
+                          const priceStr = Number(h.price).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                          const valueStr = getPEAHoldingValue(h).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                          return (
+                            <div
+                              key={`action-${i}-${h.name}`}
+                              className="flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2.5"
+                            >
+                              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary">
+                                {initials}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-foreground truncate">{name}</p>
+                                <p className="mt-0.5 text-xs tabular-nums text-muted-foreground">
+                                  {h.quantity} · {priceStr} €
+                                </p>
+                              </div>
+                              <div className="shrink-0 text-right tabular-nums font-semibold text-foreground">
+                                {valueStr} €
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </SummaryCardRow>
                   )}
                   {peaEtfs.length > 0 && (
                     <SummaryCardRow
-                      icon={<TrendingUp className="size-5" />}
+                      icon={<BarChart3 className="size-5" />}
                       title="ETF"
                       subtitle={`${peaEtfs.length} ligne${peaEtfs.length > 1 ? "s" : ""}`}
                       value={`${peaEtfs.reduce((s, h) => s + getPEAHoldingValue(h), 0).toLocaleString("fr-FR", {
@@ -640,25 +648,33 @@ export default function DashboardPage() {
                           : "Afficher le détail des ETF"
                       }
                     >
-                      <ul className="space-y-1 text-sm">
-                        {peaEtfs.map((h, i) => (
-                          <li
-                            key={`etf-${i}-${h.name}`}
-                            className="flex justify-between gap-2 py-1"
-                          >
-                            <span className="truncate text-muted-foreground">
-                              {h.name || "—"}
-                            </span>
-                            <span className="shrink-0 font-medium tabular-nums text-foreground">
-                              {getPEAHoldingValue(h).toLocaleString("fr-FR", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}{" "}
-                              €
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="space-y-2">
+                        {peaEtfs.map((h, i) => {
+                          const name = h.name?.trim() || "Sans nom";
+                          const initials = name.length >= 2 ? name.slice(0, 2).toUpperCase() : name.slice(0, 1).toUpperCase() || "—";
+                          const priceStr = Number(h.price).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                          const valueStr = getPEAHoldingValue(h).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                          return (
+                            <div
+                              key={`etf-${i}-${h.name}`}
+                              className="flex items-center gap-3 rounded-lg bg-muted/30 px-3 py-2.5"
+                            >
+                              <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-xs font-semibold text-primary">
+                                {initials}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-foreground truncate">{name}</p>
+                                <p className="mt-0.5 text-xs tabular-nums text-muted-foreground">
+                                  {h.quantity} · {priceStr} €
+                                </p>
+                              </div>
+                              <div className="shrink-0 text-right tabular-nums font-semibold text-foreground">
+                                {valueStr} €
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </SummaryCardRow>
                   )}
                 </div>

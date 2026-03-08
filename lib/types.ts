@@ -263,7 +263,13 @@ export interface SavingsAccount {
   ratePercent: number;
   /** Fréquence à laquelle les intérêts sont appliqués (par jour, semaine, mois ou an) */
   interestFrequency?: InterestFrequency;
-  /** Part du versement mensuel Épargne allouée à ce compte (total des comptes = 100 %) */
+  /** Ce compte reçoit-il une part du versement mensuel ? (défaut true) */
+  receivesContribution?: boolean;
+  /** Répartition : montant fixe en € ou part en % du reste (après prélèvement des fixes) */
+  allocationType?: "fixed" | "percentage";
+  /** Montant fixe en €/mois quand allocationType === "fixed" */
+  allocationFixed?: number;
+  /** Part en % du reste (après fixes) quand allocationType === "percentage". Les % des comptes "percentage" se partagent le reste. */
   allocationPercent?: number;
   /** Solde actuel en € */
   currentBalance?: number;
