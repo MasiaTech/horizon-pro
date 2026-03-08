@@ -24,6 +24,8 @@ export interface SummaryCardRowProps {
   expandAriaLabel?: string;
   /** Contenu affiché sous la ligne quand expandable et expanded */
   children?: React.ReactNode;
+  /** Élément optionnel à droite (ex. menu "..." DropdownMenuTrigger) */
+  trailingAction?: React.ReactNode;
 }
 
 /**
@@ -42,6 +44,7 @@ export function SummaryCardRow({
   onToggleExpand,
   expandAriaLabel,
   children,
+  trailingAction,
 }: SummaryCardRowProps) {
   const mainContent = (
     <>
@@ -95,6 +98,11 @@ export function SummaryCardRow({
             )}
           </button>
         )}
+        {trailingAction != null ? (
+          <div className="shrink-0" onClick={(e) => e.preventDefault()}>
+            {trailingAction}
+          </div>
+        ) : null}
       </div>
       {expandable && children != null && (
         <div
