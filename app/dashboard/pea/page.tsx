@@ -14,17 +14,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Legend,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { FinanceAreaChart } from "@/components/FinanceAreaChart";
 import { useProfileContext } from "@/components/ProfileProvider";
 import { updatePEAHolding } from "@/lib/useProfile";
 import { useSortableSensors } from "@/lib/dnd-sensors";
@@ -954,171 +944,48 @@ export default function PEAPage() {
                 Plafond déjà atteint.
               </p>
             )}
-            <div className="h-[220px] min-h-[200px] w-full">
-              <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-                <AreaChart
-                  data={chartData}
-                  margin={{ top: 28, right: 8, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    {/* Brut : vert */}
-                    <linearGradient
-                      id="fillPEABalance"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="hsl(142, 60%, 42%)"
-                        stopOpacity={0.4}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="hsl(142, 60%, 42%)"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                    {/* Net : bleu (couleur distincte) */}
-                    <linearGradient
-                      id="fillPEANet"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="hsl(210, 65%, 45%)"
-                        stopOpacity={0.4}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="hsl(210, 65%, 45%)"
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    className="stroke-muted"
-                    vertical={false}
-                    horizontal={true}
-                  />
-                  <XAxis
-                    dataKey="month"
-                    type="number"
-                    domain={[0, "dataMax"]}
-                    ticks={(() => {
-                      const max =
-                        chartData.length > 0
-                          ? (chartData[chartData.length - 1]?.month ?? 0)
-                          : 0;
-                      const t: number[] = [0];
-                      for (let m = 12; m <= max; m += 12) t.push(m);
-                      return t;
-                    })()}
-                    tickFormatter={(m) => formatYearAxisLabel(Number(m))}
-                    className="text-xs"
-                    tick={{ fill: "hsl(var(--muted-foreground))" }}
-                    axisLine={{ stroke: "hsl(var(--border))" }}
-                  />
-                  <YAxis
-                    tickFormatter={(v) => `${v} €`}
-                    className="text-xs"
-                    tick={{ fill: "hsl(var(--muted-foreground))" }}
-                    axisLine={false}
-                    width={50}
-                  />
-                  <ReferenceLine
-                    y={PEA_PLAFOND_EUR}
-                    stroke="hsl(var(--destructive))"
-                    strokeWidth={2}
-                    strokeDasharray="4 4"
-                    label={{
-                      value: "Plafond 150 000 €",
-                      position: "right",
-                      fill: "hsl(var(--destructive))",
-                      fontSize: 11,
-                    }}
-                  />
-                  {monthPlafondReached != null && monthPlafondReached > 0 && (
-                    <ReferenceLine
-                      x={monthPlafondReached}
-                      stroke="rgba(255, 255, 255, 0.85)"
-                      strokeWidth={2.5}
-                      strokeDasharray="6 6"
-                      label={{
-                        value: `Plafond (${formatYearAxisLabel(monthPlafondReached)})`,
-                        position: "insideTopRight",
-                        fill: "hsl(var(--muted-foreground))",
-                        fontSize: 11,
-                      }}
-                    />
-                  )}
-                  <Tooltip
-                    cursor={false}
-                    content={({ active, payload }) => {
-                      if (!active || !payload?.[0]) return null;
-                      const d = payload[0].payload;
-                      const brut = Math.round(d.balance * 100) / 100;
-                      const net = Math.round((d.netBalance ?? 0) * 100) / 100;
-                      return (
-                        <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-md">
-                          <p className="font-medium">
-                            {formatYearAxisLabel(d.month)}
-                          </p>
-                          <p className="font-mono text-foreground text-green-600 dark:text-green-400">
-                            Brut :{" "}
-                            {brut.toLocaleString("fr-FR", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}{" "}
-                            €
-                          </p>
-                          <p className="font-mono text-foreground text-blue-600 dark:text-blue-400">
-                            Net (−17,2 %) :{" "}
-                            {net.toLocaleString("fr-FR", {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })}{" "}
-                            €
-                          </p>
-                        </div>
-                      );
-                    }}
-                    allowEscapeViewBox={{ x: false, y: false }}
-                  />
-                  <Legend
-                    wrapperStyle={{ fontSize: "11px" }}
-                    formatter={(value) => (
-                      <span className="text-muted-foreground">{value}</span>
-                    )}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="netBalance"
-                    stroke="hsl(210, 65%, 45%)"
-                    strokeWidth={2}
-                    fill="url(#fillPEANet)"
-                    isAnimationActive={true}
-                    connectNulls={false}
-                    name="Net (−17,2 %)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="balance"
-                    stroke="hsl(142, 60%, 42%)"
-                    name="Brut"
-                    strokeWidth={2}
-                    fill="url(#fillPEABalance)"
-                    isAnimationActive={true}
-                    connectNulls={false}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <FinanceAreaChart
+              data={chartData}
+              series={[
+                {
+                  dataKey: "netBalance",
+                  name: "Net (−17,2 %)",
+                  color: "hsl(210, 65%, 45%)",
+                },
+                {
+                  dataKey: "balance",
+                  name: "Brut",
+                  color: "hsl(142, 60%, 42%)",
+                },
+              ]}
+              xAxisKey="month"
+              formatXLabel={formatYearAxisLabel}
+              xAxisTicks={(() => {
+                const max =
+                  chartData.length > 0
+                    ? (chartData[chartData.length - 1]?.month ?? 0)
+                    : 0;
+                const t: number[] = [0];
+                for (let m = 12; m <= max; m += 12) t.push(m);
+                return t;
+              })()}
+              height={360}
+              referenceLineY={{
+                value: PEA_PLAFOND_EUR,
+                label: "Plafond 150 000 €",
+              }}
+              referenceLineX={
+                monthPlafondReached != null && monthPlafondReached > 0
+                  ? {
+                      value: monthPlafondReached,
+                      label: `Plafond (${formatYearAxisLabel(monthPlafondReached)})`,
+                    }
+                  : undefined
+              }
+              chartId="pea"
+              fullWidth={true}
+              showSummaryBlock={true}
+            />
           </div>
         </CardContent>
       </Card>

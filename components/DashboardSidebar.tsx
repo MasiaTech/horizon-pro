@@ -156,13 +156,27 @@ function DashboardSidebarContent({ onLinkClick }: { onLinkClick?: () => void }) 
               <ChevronsUpDown className="ml-auto size-4 shrink-0 opacity-50" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" side="top" className="w-56 border-0 bg-card shadow-sm">
-            <DropdownMenuItem asChild>
-              <Link href="/dashboard/parametres" className="cursor-pointer" onClick={onLinkClick}>
+          <DropdownMenuContent align="start" side="top" className="w-56 border-0 bg-card shadow-sm p-0">
+            <div className="flex items-center gap-2 px-2 py-3">
+              <Avatar className="h-9 w-9 shrink-0 rounded-lg">
+                <AvatarFallback className="rounded-lg bg-primary/20 text-sm font-medium text-primary">
+                  {displayName.slice(0, 2).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold text-foreground">{displayName}</span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {user?.email ?? "—"}
+                </span>
+              </div>
+            </div>
+            <DropdownMenuSeparator className="bg-border" />
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href="/dashboard/parametres" onClick={onLinkClick}>
                 Paramètres
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="bg-white/20" />
+            <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem
               onClick={handleLogout}
               className="cursor-pointer text-destructive focus:text-destructive"

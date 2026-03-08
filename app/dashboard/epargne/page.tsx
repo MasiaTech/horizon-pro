@@ -28,17 +28,7 @@ import {
   SÉCURITÉ_OBJECTIVE_NAME,
 } from "@/lib/types";
 import { Lock, Plus, X, GripVertical } from "lucide-react";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Legend,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { FinanceAreaChart, type FinanceChartSeries } from "@/components/FinanceAreaChart";
 import {
   Card,
   CardContent,
@@ -64,6 +54,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 
 const INTEREST_FREQUENCY_LABELS: Record<InterestFrequency, string> = {
   daily: "Par jour",
@@ -378,6 +369,13 @@ export default function EpargnePage() {
   const [confirmDeleteObjectiveIndex, setConfirmDeleteObjectiveIndex] = useState<
     number | null
   >(null);
+  /** Point survolé au-dessus du graphique (total + détail par livret, mis à jour au hover) */
+  const [hoveredObjectivePoint, setHoveredObjectivePoint] = useState<{
+    objIndex: number;
+    total: number;
+    month: number;
+    row: Record<string, number>;
+  } | null>(null);
   const dataRef = useRef({
     savingsAccounts,
     savingsObjectives,
@@ -768,267 +766,236 @@ export default function EpargnePage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-muted-foreground">
-                    Objectif (€)
-                  </label>
-                  {isSecurite ? (
-                    <p className="text-sm font-medium text-foreground">
-                      {goalSecurite.toLocaleString("fr-FR", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}{" "}
-                      € (6 mois de dépenses)
-                    </p>
-                  ) : (
-                    <NumberInput
-                      value={objective.goalAmount ?? 0}
-                      onChange={(n) =>
-                        updateObjective(objIndex, "goalAmount", n)
-                      }
-                      placeholder="0"
-                      className="w-36"
-                    />
-                  )}
-                </div>
-                <div>
-                  <label className="mb-2 block text-sm font-medium text-muted-foreground">
-                    Comptes associés
-                  </label>
-                  <p className="mb-2 text-xs text-muted-foreground">
-                    Un compte ne peut être associé qu&apos;à un seul objectif.
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    {savingsAccounts.map((acc) => {
-                      const checked = (objective.accountNames ?? []).includes(
-                        acc.name.trim(),
-                      );
-                      return (
-                        <label
-                          key={acc.name}
-                          className="flex cursor-pointer items-center gap-2 text-sm"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={() =>
-                              toggleAccountInObjective(objIndex, acc.name.trim())
-                            }
-                            className="h-4 w-4 rounded border-border"
-                          />
-                          <span className="text-foreground">{acc.name}</span>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-                {accountNamesInObjective.length > 0 && (
-                  <>
-                    {goalAmount > 0 && monthGoalReached != null && (
-                      <p className="text-sm text-muted-foreground">
-                        Atteinte de l&apos;objectif prévue dans{" "}
-                        {Math.floor(monthGoalReached / 12) > 0 && (
-                          <>
-                            {Math.floor(monthGoalReached / 12)} an{" "}
-                            {Math.floor(monthGoalReached / 12) > 1 ? "s " : ""}
-                          </>
-                        )}
-                        {monthGoalReached % 12} mois
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-muted-foreground">
+                        Objectif (€)
+                      </label>
+                      {isSecurite ? (
+                        <p className="text-sm font-medium text-foreground">
+                          {goalSecurite.toLocaleString("fr-FR", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          € (6 mois de dépenses)
+                        </p>
+                      ) : (
+                        <NumberInput
+                          value={objective.goalAmount ?? 0}
+                          onChange={(n) =>
+                            updateObjective(objIndex, "goalAmount", n)
+                          }
+                          placeholder="0"
+                          className="w-36"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-medium text-muted-foreground">
+                        Comptes associés
+                      </label>
+                      <p className="mb-2 text-xs text-muted-foreground">
+                        Un compte ne peut être associé qu&apos;à un seul objectif.
                       </p>
-                    )}
-                    <div className="h-[240px] min-h-[200px] w-full">
-                      <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-                        <AreaChart
-                          data={displayData}
-                          margin={{
-                            top: 16,
-                            right: 8,
-                            left: 0,
-                            bottom: 0,
-                          }}
-                        >
-                          <defs>
-                            {accountNamesInObjective.map((name, i) => {
-                              const color =
-                                OBJECTIVE_CHART_COLORS[
-                                  i % OBJECTIVE_CHART_COLORS.length
-                                ];
-                              return (
-                                <linearGradient
-                                  key={name}
-                                  id={`fillEpargne-${objIndex}-${name.replace(/\s/g, "-")}`}
-                                  x1="0"
-                                  y1="0"
-                                  x2="0"
-                                  y2="1"
-                                >
-                                  <stop
-                                    offset="5%"
-                                    stopColor={color}
-                                    stopOpacity={0.4}
-                                  />
-                                  <stop
-                                    offset="95%"
-                                    stopColor={color}
-                                    stopOpacity={0}
-                                  />
-                                </linearGradient>
-                              );
-                            })}
-                            <linearGradient
-                              id={`fillEpargne-${objIndex}-total`}
-                              x1="0"
-                              y1="0"
-                              x2="0"
-                              y2="1"
-                            >
-                              <stop
-                                offset="5%"
-                                stopColor="hsl(45, 88%, 48%)"
-                                stopOpacity={0.4}
-                              />
-                              <stop
-                                offset="95%"
-                                stopColor="hsl(45, 88%, 48%)"
-                                stopOpacity={0}
-                              />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            className="stroke-muted"
-                            vertical={false}
-                            horizontal={true}
-                          />
-                          <XAxis
-                            dataKey="month"
-                            type="number"
-                            domain={[0, "dataMax"]}
-                            ticks={(() => {
-                              const t: number[] = [0];
-                              for (let m = 6; m <= maxMonth; m += 6) t.push(m);
-                              return t;
-                            })()}
-                            tickFormatter={(m) =>
-                              formatMonthAxisLabel(Number(m))
-                            }
-                            className="text-xs"
-                            tick={{ fill: "hsl(var(--muted-foreground))" }}
-                            axisLine={{ stroke: "hsl(var(--border))" }}
-                          />
-                          <YAxis
-                            tickFormatter={(v) => `${v} €`}
-                            className="text-xs"
-                            tick={{ fill: "hsl(var(--muted-foreground))" }}
-                            axisLine={false}
-                            width={50}
-                          />
-                          <Tooltip
-                            content={({ active, payload }) => {
-                              if (!active || !payload?.length) return null;
-                              const row = payload[0]?.payload as Record<
-                                string,
-                                number
-                              >;
-                              if (!row) return null;
-                              return (
-                                <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-md">
-                                  <p className="mb-1 font-medium">
-                                    {formatMonthAxisLabel(row.month)}
-                                  </p>
-                                  {accountNamesInObjective.map((name, i) => (
-                                    <p
-                                      key={name}
-                                      className="tabular-nums"
-                                      style={{
-                                        color:
-                                          OBJECTIVE_CHART_COLORS[
-                                            i % OBJECTIVE_CHART_COLORS.length
-                                          ],
-                                      }}
+                      {(() => {
+                        const currentNames = objective.accountNames ?? [];
+                        const availableAccounts = savingsAccounts.filter((acc) => {
+                          const name = acc.name.trim();
+                          if (currentNames.includes(name)) return false;
+                          return !savingsObjectives.some(
+                            (o, i) =>
+                              i !== objIndex &&
+                              (o.accountNames ?? []).includes(name)
+                          );
+                        });
+                        return (
+                          <div className="space-y-3">
+                            {availableAccounts.length > 0 && (
+                              <Select
+                                value=""
+                                onValueChange={(value) => {
+                                  if (value)
+                                    toggleAccountInObjective(objIndex, value);
+                                }}
+                              >
+                                <SelectTrigger className="w-full max-w-xs">
+                                  <SelectValue placeholder="Ajouter un compte" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {availableAccounts.map((acc) => (
+                                    <SelectItem
+                                      key={acc.name}
+                                      value={acc.name.trim()}
                                     >
-                                      {name}:{" "}
-                                      {(row[name] ?? 0).toLocaleString("fr-FR", {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2,
-                                      })}{" "}
-                                      €
-                                    </p>
+                                      {acc.name}
+                                    </SelectItem>
                                   ))}
-                                  <p className="mt-1 font-medium text-foreground">
-                                    Total:{" "}
-                                    {(row.total ?? 0).toLocaleString("fr-FR", {
+                                </SelectContent>
+                              </Select>
+                            )}
+                            {currentNames.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {currentNames.map((name) => (
+                                  <Badge
+                                    key={name}
+                                    variant="secondary"
+                                    className="gap-1 pr-1"
+                                  >
+                                    {name}
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        toggleAccountInObjective(objIndex, name)
+                                      }
+                                      className="ml-0.5 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                                      aria-label={`Retirer ${name}`}
+                                    >
+                                      <X className="size-3.5" />
+                                    </button>
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">
+                                Aucun compte associé. Ajoutez-en un ci-dessus.
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                    {accountNamesInObjective.length > 0 &&
+                      goalAmount > 0 &&
+                      monthGoalReached != null && (
+                        <p className="text-sm text-muted-foreground">
+                          Atteinte de l&apos;objectif prévue dans{" "}
+                          {Math.floor(monthGoalReached / 12) > 0 && (
+                            <>
+                              {Math.floor(monthGoalReached / 12)} an{" "}
+                              {Math.floor(monthGoalReached / 12) > 1 ? "s " : ""}
+                            </>
+                          )}
+                          {monthGoalReached % 12} mois
+                        </p>
+                      )}
+                  </div>
+                  {accountNamesInObjective.length > 0 && (
+                    <div className="flex flex-col justify-center">
+                      {(() => {
+                        const currentRow = displayData[0] as Record<string, number> | undefined;
+                        const isHovered = hoveredObjectivePoint?.objIndex === objIndex;
+                        const row = isHovered && hoveredObjectivePoint?.row
+                          ? hoveredObjectivePoint.row
+                          : currentRow ?? {};
+                        const displayTotal = (row.total ?? 0) as number;
+                        const displayLabel = isHovered && hoveredObjectivePoint
+                          ? formatMonthAxisLabel(hoveredObjectivePoint.month)
+                          : "Actuel";
+                        return (
+                          <div className="space-y-2">
+                            <p className="text-xs text-muted-foreground">
+                              {displayLabel}
+                            </p>
+                            <p className="text-2xl font-semibold tabular-nums text-foreground">
+                              {displayTotal.toLocaleString("fr-FR", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              €
+                            </p>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                              {accountNamesInObjective.map((name, i) => {
+                                const val = Number(row[name]) ?? 0;
+                                const color =
+                                  OBJECTIVE_CHART_COLORS[i % OBJECTIVE_CHART_COLORS.length];
+                                return (
+                                  <span
+                                    key={name}
+                                    className="tabular-nums"
+                                    style={{ color }}
+                                  >
+                                    {name}:{" "}
+                                    {val.toLocaleString("fr-FR", {
                                       minimumFractionDigits: 2,
                                       maximumFractionDigits: 2,
                                     })}{" "}
                                     €
-                                  </p>
-                                </div>
-                              );
-                            }}
-                          />
-                          <Legend />
-                          {accountNamesInObjective.map((name, i) => (
-                            <Area
-                              key={name}
-                              type="monotone"
-                              dataKey={name}
-                              name={name}
-                              stroke={
-                                OBJECTIVE_CHART_COLORS[
-                                  i % OBJECTIVE_CHART_COLORS.length
-                                ]
-                              }
-                              strokeWidth={2}
-                              fill={`url(#fillEpargne-${objIndex}-${name.replace(/\s/g, "-")})`}
-                              isAnimationActive={true}
-                              connectNulls={false}
-                            />
-                          ))}
-                          <Area
-                            type="monotone"
-                            dataKey="total"
-                            name="Total"
-                            stroke="hsl(45, 88%, 48%)"
-                            strokeWidth={2.5}
-                            fill={`url(#fillEpargne-${objIndex}-total)`}
-                            isAnimationActive={true}
-                            connectNulls={false}
-                          />
-                          {goalAmount > 0 && (
-                            <ReferenceLine
-                              y={goalAmount}
-                              stroke="hsl(var(--destructive))"
-                              strokeWidth={2}
-                              strokeDasharray="4 4"
-                              label={{
-                                value: "Objectif",
-                                position: "right",
-                                fill: "hsl(var(--destructive))",
-                                fontSize: 11,
-                              }}
-                            />
-                          )}
-                          {goalAmount > 0 &&
-                            monthGoalReached != null &&
-                            monthGoalReached > 0 && (
-                              <ReferenceLine
-                                x={monthGoalReached}
-                                stroke="rgba(255, 255, 255, 0.85)"
-                                strokeWidth={2.5}
-                                strokeDasharray="6 6"
-                                label={{
-                                  value: `Atteint (${formatMonthAxisLabel(monthGoalReached)})`,
-                                  position: "insideTopRight",
-                                  fill: "hsl(var(--muted-foreground))",
-                                  fontSize: 11,
-                                }}
-                              />
-                            )}
-                        </AreaChart>
-                      </ResponsiveContainer>
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
-                  </>
+                  )}
+                </div>
+                {accountNamesInObjective.length > 0 && (
+                  <FinanceAreaChart
+                    data={displayData}
+                    series={[
+                      ...accountNamesInObjective.map(
+                        (name, i): FinanceChartSeries => ({
+                          dataKey: name,
+                          name,
+                          color:
+                            OBJECTIVE_CHART_COLORS[
+                              i % OBJECTIVE_CHART_COLORS.length
+                            ],
+                        })
+                      ),
+                      {
+                        dataKey: "total",
+                        name: "Total",
+                        color: "hsl(45, 88%, 48%)",
+                      },
+                    ]}
+                    xAxisKey="month"
+                    formatXLabel={formatMonthAxisLabel}
+                    xAxisTicks={(() => {
+                      const t: number[] = [0];
+                      for (let m = 6; m <= maxMonth; m += 6) t.push(m);
+                      return t;
+                    })()}
+                    totalDataKey="total"
+                    height={360}
+                    referenceLineY={
+                      goalAmount > 0
+                        ? { value: goalAmount, label: "Objectif" }
+                        : undefined
+                    }
+                    referenceLineX={
+                      goalAmount > 0 &&
+                      monthGoalReached != null &&
+                      monthGoalReached > 0
+                        ? {
+                            value: monthGoalReached,
+                            label: `Atteint (${formatMonthAxisLabel(monthGoalReached)})`,
+                          }
+                        : undefined
+                    }
+                    chartId={`epargne-obj-${objIndex}`}
+                    fullWidth={true}
+                    showSummaryBlock={false}
+                    onHover={(row) =>
+                      setHoveredObjectivePoint(
+                        row
+                          ? {
+                              objIndex,
+                              total: Number(row.total) || 0,
+                              month: Number(row.month) || 0,
+                              row: Object.fromEntries(
+                                Object.entries(row).map(([k, v]) => [
+                                  k,
+                                  typeof v === "number" ? v : Number(v) || 0,
+                                ])
+                              ) as Record<string, number>,
+                            }
+                          : null
+                      )
+                    }
+                  />
                 )}
               </CardContent>
             </Card>
@@ -1215,122 +1182,23 @@ export default function EpargnePage() {
                 <p className="mb-2 text-sm font-medium text-muted-foreground">
                   Évolution du solde (jusqu’à l’objectif + 6 mois)
                 </p>
-                <div className="h-[220px] min-h-[200px] w-full">
-                  <ResponsiveContainer width="100%" height="100%" minHeight={200}>
-                    <AreaChart
-                      data={[]}
-                      margin={{ top: 28, right: 8, left: 0, bottom: 0 }}
-                    >
-                      <defs>
-                        <linearGradient
-                          id={`fillBalance-${index}`}
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor="hsl(var(--primary))"
-                            stopOpacity={0.3}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor="hsl(var(--primary))"
-                            stopOpacity={0}
-                          />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        className="stroke-muted"
-                        vertical={false}
-                        horizontal={true}
-                      />
-                      <XAxis
-                        dataKey="month"
-                        type="number"
-                        domain={[0, "dataMax"]}
-                        ticks={(() => {
-                          const max =
-                            0;
-                          const t: number[] = [0];
-                          for (let m = 6; m <= max; m += 6) t.push(m);
-                          return t;
-                        })()}
-                        tickFormatter={(m) => formatMonthAxisLabel(Number(m))}
-                        className="text-xs"
-                        tick={{ fill: "hsl(var(--muted-foreground))" }}
-                        axisLine={{ stroke: "hsl(var(--border))" }}
-                      />
-                      <YAxis
-                        tickFormatter={(v) => `${v} €`}
-                        className="text-xs"
-                        tick={{ fill: "hsl(var(--muted-foreground))" }}
-                        axisLine={false}
-                        width={50}
-                      />
-                      {false && (
-                        <ReferenceLine
-                          y={0}
-                          stroke="hsl(var(--destructive))"
-                          strokeWidth={2}
-                          strokeDasharray="4 4"
-                          label={{
-                            value: "Objectif",
-                            position: "right",
-                            fill: "hsl(var(--destructive))",
-                            fontSize: 11,
-                          }}
-                        />
-                      )}
-                      <Tooltip
-                        cursor={false}
-                        content={({ active, payload }) => {
-                          if (!active || !payload?.[0]) return null;
-                          const d = payload[0].payload;
-                          const displayBalance = Math.round(d.balance * 100) / 100;
-                          return (
-                            <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-md">
-                              <p className="font-medium">{d.label}</p>
-                              <p className="font-mono text-foreground">
-                                {displayBalance.toLocaleString("fr-FR", {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}{" "}
-                                €
-                              </p>
-                            </div>
-                          );
-                        }}
-                        allowEscapeViewBox={{ x: false, y: false }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="balance"
-                        stroke="hsl(var(--primary))"
-                        strokeWidth={2}
-                        fill={`url(#fillBalance-${index})`}
-                        isAnimationActive={true}
-                        connectNulls={false}
-                      />
-                      {false && (
-                          <ReferenceLine
-                            x={0}
-                            stroke="rgba(255, 255, 255, 0.85)"
-                            strokeWidth={2.5}
-                            strokeDasharray="6 6"
-                            label={{
-                              value: "Objectif",
-                              position: "insideTopRight",
-                              fill: "hsl(var(--muted-foreground))",
-                              fontSize: 11,
-                            }}
-                          />
-                        )}
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
+                <FinanceAreaChart
+                  data={[]}
+                  series={[
+                    {
+                      dataKey: "balance",
+                      name: "Solde",
+                      color: "hsl(var(--primary))",
+                    },
+                  ]}
+                  xAxisKey="month"
+                  formatXLabel={formatMonthAxisLabel}
+                  xAxisTicks={[0]}
+                  height={220}
+                  chartId={`balance-${index}`}
+                  fullWidth={false}
+                  showSummaryBlock={false}
+                />
               </div>
             </CardContent>
                   </Card>
