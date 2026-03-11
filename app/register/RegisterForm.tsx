@@ -6,13 +6,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
 import Logo from "@/components/Logo";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/PasswordInput";
@@ -144,40 +137,41 @@ export default function RegisterForm() {
 
   if (emailSent) {
     return (
-      <Card className="w-full max-w-md">
-        <CardHeader className="flex flex-col items-center gap-3 text-center">
-          <Logo size={64} href="/" />
-          <CardTitle className="text-2xl">Vérifiez votre email</CardTitle>
-          <CardDescription>
-            Un lien de confirmation a été envoyé à votre adresse email. Cliquez
-            sur le lien dans le mail pour activer votre compte.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="rounded-md border border-border bg-muted/50 p-4 text-center text-sm text-foreground">
-            Allez dans vos mails pour confirmer le compte.
-          </p>
-          <Button asChild variant="outline" className="w-full">
-            <Link href="/login">Retour à la connexion</Link>
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="w-full max-w-[420px] text-base">
+        <Logo size={48} href="/" className="mb-10 block" />
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+          Vérifiez votre email
+        </h1>
+        <p className="mt-2 text-base text-muted-foreground">
+          Un lien de confirmation a été envoyé à votre adresse email. Cliquez
+          sur le lien dans le mail pour activer votre compte.
+        </p>
+        <p className="mt-6 rounded-md border border-border bg-muted/50 p-4 text-center text-base text-foreground">
+          Allez dans vos mails pour confirmer le compte.
+        </p>
+        <Button asChild variant="outline" className="mt-8 h-12 w-full text-base">
+          <Link href="/login">Retour à la connexion</Link>
+        </Button>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="flex flex-col items-center gap-3 text-center">
-        <Logo size={64} href="/" />
-        <CardTitle className="text-2xl">Inscription</CardTitle>
-        <CardDescription>Créez votre compte Horizon</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="w-full max-w-[420px] text-base">
+      <Logo size={48} href="/" className="mb-10 block" />
+      <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+        Inscription
+      </h1>
+      <p className="mt-2 text-base text-muted-foreground">
+        Créez votre compte Horizon pour accéder à votre tableau de bord.
+      </p>
+
+      <div className="mt-10 space-y-5">
         <Button
           type="button"
           variant="outline"
           size="lg"
-          className="mb-4 w-full gap-2 border-transparent bg-[#1a73e8] text-white hover:bg-[#1558c0]"
+          className="h-12 w-full gap-2 text-base border-transparent bg-[#1a73e8] text-white hover:bg-[#1558c0]"
           onClick={handleGoogleSignIn}
           disabled={oauthLoading}
         >
@@ -188,17 +182,25 @@ export default function RegisterForm() {
             </>
           ) : (
             <>
-              <IconSvgGoogle className="h-4 w-4" />
+              <IconSvgGoogle className="h-5 w-5" />
               <span>Continuer avec Google</span>
             </>
           )}
         </Button>
+
+        <div className="relative my-7">
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-sm text-muted-foreground">
+            ou
+          </span>
+          <div className="h-px bg-border" />
+        </div>
 
         <form
           onSubmit={(e) => {
             e.preventDefault();
             form.handleSubmit();
           }}
+          className="space-y-5"
         >
           <FieldGroup>
             <form.Field
@@ -222,6 +224,7 @@ export default function RegisterForm() {
                       aria-invalid={isInvalid}
                       autoComplete="email"
                       placeholder="Email"
+                      className="h-12 text-base"
                     />
                     {(hasErrors || isInvalid) && (
                       <FieldError errors={field.state.meta.errors} />
@@ -254,8 +257,9 @@ export default function RegisterForm() {
                       aria-invalid={isInvalid}
                       autoComplete="new-password"
                       placeholder="Mot de passe"
+                      className="h-12 text-base"
                     />
-                    <p className="mt-1 text-xs text-muted-foreground">
+                    <p className="mt-1.5 text-sm text-muted-foreground">
                       Au moins 12 caractères, une majuscule, une minuscule, un
                       chiffre et un caractère spécial.
                     </p>
@@ -285,7 +289,7 @@ export default function RegisterForm() {
                           </div>
                           {strength.label && (
                             <span
-                              className="text-xs font-medium tabular-nums"
+                              className="text-sm font-medium tabular-nums"
                               style={{
                                 color:
                                   strength.level === "weak"
@@ -305,7 +309,7 @@ export default function RegisterForm() {
                       <>
                         <FieldError errors={field.state.meta.errors} />
                         {missing.length > 0 && (
-                          <ul className="mt-1 list-inside list-disc text-xs text-destructive">
+                          <ul className="mt-1 list-inside list-disc text-sm text-destructive">
                             {missing.map((m) => (
                               <li key={m}>{m}</li>
                             ))}
@@ -337,6 +341,7 @@ export default function RegisterForm() {
                       aria-invalid={isInvalid}
                       autoComplete="new-password"
                       placeholder="Confirmation du mot de passe"
+                      className="h-12 text-base"
                     />
                     {(hasErrors || isInvalid) && (
                       <FieldError errors={field.state.meta.errors} />
@@ -347,11 +352,15 @@ export default function RegisterForm() {
             />
           </FieldGroup>
           {submitError && (
-            <p className="mt-3 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+            <p className="rounded-md bg-destructive/15 p-3 text-base text-destructive">
               {submitError}
             </p>
           )}
-          <Button type="submit" className="mt-4 w-full" disabled={showSpinner}>
+          <Button
+            type="submit"
+            className="h-12 w-full text-base"
+            disabled={showSpinner}
+          >
             {showSpinner ? (
               <>
                 <Spinner className="size-5 shrink-0" size={20} />
@@ -362,16 +371,17 @@ export default function RegisterForm() {
             )}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Déjà un compte ?{" "}
-          <Link
-            href="/login"
-            className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
-          >
-            Se connecter
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+      </div>
+
+      <p className="mt-10 text-center text-base text-muted-foreground">
+        Déjà un compte ?{" "}
+        <Link
+          href="/login"
+          className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+        >
+          Se connecter
+        </Link>
+      </p>
+    </div>
   );
 }

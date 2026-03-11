@@ -7,13 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabaseClient";
 import Logo from "@/components/Logo";
 import IconSvgGoogle from "@/resources/icons/icon-svg-google";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/PasswordInput";
@@ -126,18 +119,22 @@ export default function LoginForm() {
   const showOauthSpinner = oauthLoading;
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="flex flex-col items-center gap-3 text-center">
-        <Logo size={64} href="/" />
-        <CardTitle className="text-2xl">Connexion</CardTitle>
-        <CardDescription>Connectez-vous à votre compte Horizon</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <div className="w-full max-w-[420px] text-base">
+      <Logo size={48} href="/" className="mb-10 block" />
+      <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+        Connexion
+      </h1>
+      <p className="mt-2 text-base text-muted-foreground">
+        Connectez-vous à votre compte Horizon pour accéder à votre tableau de
+        bord.
+      </p>
+
+      <div className="mt-10 space-y-5">
         <Button
           type="button"
           variant="outline"
           size="lg"
-          className="mb-4 w-full gap-2 border-transparent bg-[#1a73e8] text-white hover:bg-[#1558c0]"
+          className="h-12 w-full gap-2 text-base border-transparent bg-[#1a73e8] text-white hover:bg-[#1558c0]"
           onClick={handleGoogleSignIn}
           disabled={showOauthSpinner}
         >
@@ -148,17 +145,25 @@ export default function LoginForm() {
             </>
           ) : (
             <>
-              <IconSvgGoogle className="h-4 w-4" />
+              <IconSvgGoogle className="h-5 w-5" />
               <span>Continuer avec Google</span>
             </>
           )}
         </Button>
+
+        <div className="relative my-7">
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-sm text-muted-foreground">
+            ou
+          </span>
+          <div className="h-px bg-border" />
+        </div>
 
         <form
           onSubmit={(e) => {
             e.preventDefault();
             form.handleSubmit();
           }}
+          className="space-y-5"
         >
           <FieldGroup>
             <form.Field
@@ -178,6 +183,7 @@ export default function LoginForm() {
                       aria-invalid={isInvalid}
                       autoComplete="email"
                       placeholder="Email"
+                      className="h-12 text-base"
                     />
                     {isInvalid && (
                       <FieldError errors={field.state.meta.errors} />
@@ -202,6 +208,7 @@ export default function LoginForm() {
                       aria-invalid={isInvalid}
                       autoComplete="current-password"
                       placeholder="Mot de passe"
+                      className="h-12 text-base"
                     />
                     {isInvalid && (
                       <FieldError errors={field.state.meta.errors} />
@@ -212,11 +219,15 @@ export default function LoginForm() {
             />
           </FieldGroup>
           {submitError && (
-            <p className="mt-3 rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+            <p className="rounded-md bg-destructive/15 p-3 text-base text-destructive">
               {submitError}
             </p>
           )}
-          <Button type="submit" className="mt-4 w-full" disabled={showSpinner}>
+          <Button
+            type="submit"
+            className="h-12 w-full text-base"
+            disabled={showSpinner}
+          >
             {showSpinner ? (
               <>
                 <Spinner className="size-5 shrink-0" size={20} />
@@ -227,16 +238,17 @@ export default function LoginForm() {
             )}
           </Button>
         </form>
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Pas encore de compte ?{" "}
-          <Link
-            href="/register"
-            className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
-          >
-            S&apos;inscrire
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+      </div>
+
+      <p className="mt-10 text-center text-base text-muted-foreground">
+        Pas encore de compte ?{" "}
+        <Link
+          href="/register"
+          className="font-medium text-primary underline underline-offset-4 hover:text-primary/90"
+        >
+          S&apos;inscrire
+        </Link>
+      </p>
+    </div>
   );
 }
