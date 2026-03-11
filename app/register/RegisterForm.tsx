@@ -13,11 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/PasswordInput";
 import { Button } from "@/components/ui/button";
@@ -27,7 +23,8 @@ import {
   getPasswordStrength,
   registerSchema,
 } from "@/lib/authValidation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import IconSvgGoogle from "@/resources/icons/icon-svg-google";
 
 /**
  * Formulaire d'inscription : email + mot de passe + confirmation, TanStack Form + Zod.
@@ -39,6 +36,51 @@ export default function RegisterForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
+
+  /** Si déjà connecté, redirection vers le dashboard. */
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        router.replace("/dashboard");
+      }
+    });
+  }, [router]);
+
+  /** Même auth Google que la page connexion : crée le compte si besoin côté Supabase. */
+  const handleGoogleSignIn = async () => {
+    setSubmitError(null);
+    setOauthLoading(true);
+    try {
+      const supabase = createClient();
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "";
+      const redirectUrl = `${origin || ""}/dashboard`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: redirectUrl,
+        },
+      });
+
+      if (error) {
+        setSubmitError(
+          error.message ||
+            "La connexion avec Google a échoué. Merci de réessayer.",
+        );
+      }
+    } catch (e) {
+      setSubmitError(
+        e instanceof Error
+          ? e.message
+          : "Une erreur inattendue est survenue pendant la connexion Google.",
+      );
+    } finally {
+      setOauthLoading(false);
+    }
+  };
 
   const form = useForm({
     defaultValues: {
@@ -80,7 +122,7 @@ export default function RegisterForm() {
           setSubmitError(
             isEmailTaken
               ? "Cette adresse email est déjà utilisée."
-              : error.message
+              : error.message,
           );
           return;
         }
@@ -107,8 +149,8 @@ export default function RegisterForm() {
           <Logo size={64} href="/" />
           <CardTitle className="text-2xl">Vérifiez votre email</CardTitle>
           <CardDescription>
-            Un lien de confirmation a été envoyé à votre adresse email.
-            Cliquez sur le lien dans le mail pour activer votre compte.
+            Un lien de confirmation a été envoyé à votre adresse email. Cliquez
+            sur le lien dans le mail pour activer votre compte.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -131,6 +173,27 @@ export default function RegisterForm() {
         <CardDescription>Créez votre compte Horizon</CardDescription>
       </CardHeader>
       <CardContent>
+        <Button
+          type="button"
+          variant="outline"
+          size="lg"
+          className="mb-4 w-full gap-2 border-transparent bg-[#1a73e8] text-white hover:bg-[#1558c0]"
+          onClick={handleGoogleSignIn}
+          disabled={oauthLoading}
+        >
+          {oauthLoading ? (
+            <>
+              <Spinner className="size-5 shrink-0" size={20} />
+              <span className="ml-2">Connexion avec Google...</span>
+            </>
+          ) : (
+            <>
+              <IconSvgGoogle className="h-4 w-4" />
+              <span>Continuer avec Google</span>
+            </>
+          )}
+        </Button>
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -288,11 +351,7 @@ export default function RegisterForm() {
               {submitError}
             </p>
           )}
-          <Button
-            type="submit"
-            className="mt-4 w-full"
-            disabled={showSpinner}
-          >
+          <Button type="submit" className="mt-4 w-full" disabled={showSpinner}>
             {showSpinner ? (
               <>
                 <Spinner className="size-5 shrink-0" size={20} />
