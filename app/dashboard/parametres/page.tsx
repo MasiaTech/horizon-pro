@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Trash2, Calendar, CreditCard } from "lucide-react";
-import Link from "next/link";
+import { ManageSubscriptionDialog } from "@/components/ManageSubscriptionDialog";
 
 type User = {
   id: string;
@@ -45,6 +45,7 @@ export default function ParametresPage() {
     null,
   );
   const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [manageSubDialogOpen, setManageSubDialogOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -171,8 +172,17 @@ export default function ParametresPage() {
                     </div>
                   )}
               </div>
-              <Button asChild variant="outline" className="w-full sm:w-auto">
-                <Link href="/abonnement">Gérer l&apos;abonnement</Link>
+              <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-3">
+                <p className="text-xs text-muted-foreground">
+                  💡 <span className="font-medium text-blue-500">Pas de renouvellement automatique.</span> Vous contrôlez vos dépenses en créditant manuellement votre compte quand vous le souhaitez.
+                </p>
+              </div>
+              <Button
+                onClick={() => setManageSubDialogOpen(true)}
+                variant="outline"
+                className="w-full sm:w-auto"
+              >
+                Gérer l&apos;abonnement
               </Button>
             </>
           ) : (
@@ -190,8 +200,16 @@ export default function ParametresPage() {
                   </p>
                 </div>
               </div>
-              <Button asChild className="w-full sm:w-auto">
-                <Link href="/abonnement">Renouveler l&apos;abonnement</Link>
+              <div className="rounded-lg bg-blue-500/10 border border-blue-500/20 p-3">
+                <p className="text-xs text-muted-foreground">
+                  💡 <span className="font-medium text-blue-500">Pas de renouvellement automatique.</span> Rechargez votre compte quand vous le souhaitez, sans engagement.
+                </p>
+              </div>
+              <Button
+                onClick={() => setManageSubDialogOpen(true)}
+                className="w-full sm:w-auto"
+              >
+                Renouveler l&apos;abonnement
               </Button>
             </>
           )}
@@ -273,6 +291,11 @@ export default function ParametresPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ManageSubscriptionDialog
+        open={manageSubDialogOpen}
+        onOpenChange={setManageSubDialogOpen}
+      />
     </div>
   );
 }

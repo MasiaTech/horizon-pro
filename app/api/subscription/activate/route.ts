@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabaseServer";
-import { stripe, STRIPE_PRICES } from "@/lib/stripe";
+import { stripe } from "@/lib/stripe";
+import { getPlanById } from "@/lib/subscriptionPlans";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -16,11 +17,15 @@ export async function POST(request: NextRequest) {
 
     const { planId } = await request.json();
 
-    if (!planId || !["yearly", "monthly", "test"].includes(planId)) {
+    const plan = getPlanById(planId);
+    
+    if (!plan) {
       return NextResponse.json({ error: "Plan invalide" }, { status: 400 });
     }
 
-    const priceId = STRIPE_PRICES[planId as keyof typeof STRIPE_PRICES];
+    if (!plan.priceId) {
+      return NextResponse.json({ error: "Prix Stripe manquant pour ce plan" }, { status: 500 });
+    }
 
     // URL de base pour les redirections
     const baseUrl = process.env.SITE_URL || 
@@ -32,7 +37,7 @@ export async function POST(request: NextRequest) {
       customer_email: user.email,
       line_items: [
         {
-          price: priceId,
+          price: plan.priceId,
           quantity: 1,
         },
       ],
@@ -41,8 +46,8 @@ export async function POST(request: NextRequest) {
       cancel_url: `${baseUrl}/abonnement`,
       metadata: {
         userId: user.id,
-        planId,
-        duration: planId === 'yearly' ? '365' : planId === 'monthly' ? '30' : '7',
+        planId: plan.id,
+        duration: plan.duration.toString(),
       },
     });
 
