@@ -15,15 +15,6 @@ export interface SubscriptionPlan {
 
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
-    id: "test",
-    name: "Mode test (7 jours gratuit)",
-    price: 0,
-    duration: 7,
-    priceId: process.env.STRIPE_PRICE_TEST || null,
-    badge: "🧪 Test",
-    description: "Pour tester l'application",
-  },
-  {
     id: "monthly_30",
     name: "30 jours",
     price: 15.99,

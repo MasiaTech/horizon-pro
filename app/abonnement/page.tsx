@@ -189,7 +189,7 @@ export default function AbonnementPage() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-2">
-          {SUBSCRIPTION_PLANS.filter((plan) => plan.id !== "test").map((plan) => {
+          {SUBSCRIPTION_PLANS.map((plan) => {
             const pricePerMonth = plan.duration > 0 ? plan.price / (plan.duration / 30) : 0;
             
             return (
@@ -378,17 +378,6 @@ export default function AbonnementPage() {
           <p className="text-sm text-muted-foreground">
             💳 Paiement sécurisé • 🔒 Vos données sont protégées
           </p>
-          
-          {/* Lien de test pour la production */}
-          <div className="mt-6">
-            <button
-              onClick={() => handleSubscribe("test")}
-              disabled={loading}
-              className="text-xs text-muted-foreground hover:text-horizon-primary underline transition-colors"
-            >
-              {loading && selectedPlan === "test" ? "Activation test..." : "🧪 Mode test (7 jours gratuit)"}
-            </button>
-          </div>
         </div>
       </div>
     </div>

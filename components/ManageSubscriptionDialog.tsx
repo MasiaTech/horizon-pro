@@ -58,7 +58,7 @@ export function ManageSubscriptionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Prolonger votre abonnement</DialogTitle>
           <DialogDescription>
@@ -74,7 +74,7 @@ export function ManageSubscriptionDialog({
           </div>
         </DialogHeader>
 
-        <div className="grid gap-4 md:grid-cols-3 py-4">
+        <div className="grid gap-4 md:grid-cols-2 py-4">
           {SUBSCRIPTION_PLANS.map((plan) => (
             <Card
               key={plan.id}
@@ -90,7 +90,7 @@ export function ManageSubscriptionDialog({
                 </div>
               )}
 
-              <CardContent className="p-6 flex flex-col flex-1">
+              <CardContent className="p-6 flex flex-col">
                 <div className="text-center space-y-2">
                   <h3 className="text-xl font-bold text-foreground">
                     {plan.name}
@@ -116,22 +116,19 @@ export function ManageSubscriptionDialog({
                   </div>
                 </div>
 
-                {/* Spacer pour pousser le contenu en bas */}
-                <div className="flex-1" />
-
-                {/* Avantages en bas */}
+                {/* Avantages */}
                 <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Check className="h-4 w-4 text-green-500" />
-                    <span>Accès complet pendant {plan.duration} jours</span>
+                    <span>Accès complet</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-foreground">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Check className="h-4 w-4 text-green-500" />
-                    <span>Mises à jour incluses</span>
+                    <span>Mises à jour</span>
                   </div>
                 </div>
 
-                {/* Bouton tout en bas */}
+                {/* Bouton */}
                 <Button
                   onClick={() => handleSubscribe(plan.id)}
                   disabled={loading}
