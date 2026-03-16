@@ -63,7 +63,9 @@ export function normalizeIncomeSource(
         raw.deductionPercent != null ? Number(raw.deductionPercent) : undefined,
       taxIndexed: raw.taxIndexed === true,
       taxBase:
-        raw.taxBase === "brut" || raw.taxBase === "net" ? raw.taxBase : undefined,
+        raw.taxBase === "brut" || raw.taxBase === "net"
+          ? raw.taxBase
+          : undefined,
     };
   }
   return {
@@ -85,7 +87,8 @@ export function getIncomeAmountForTax(source: IncomeSource): number {
     source.type === "range"
       ? ((Number(source.min) || 0) + (Number(source.max) || 0)) / 2
       : Number(source.amount) || 0;
-  if (source.taxBase === "brut" && (source.deductionPercent ?? 0) > 0) return raw;
+  if (source.taxBase === "brut" && (source.deductionPercent ?? 0) > 0)
+    return raw;
   return getIncomeAmount(source);
 }
 
@@ -341,8 +344,7 @@ export function normalizePEAHolding(raw: Record<string, unknown>): PEAHolding {
       raw.dividendPercentPerYear != null
         ? Number(raw.dividendPercentPerYear)
         : undefined,
-    roePercent:
-      raw.roePercent != null ? Number(raw.roePercent) : undefined,
+    roePercent: raw.roePercent != null ? Number(raw.roePercent) : undefined,
   };
 }
 
@@ -367,6 +369,8 @@ export interface Profile {
   pea_actions?: PEAHolding[];
   /** Lignes ETF dans le PEA */
   pea_etfs?: PEAHolding[];
+  /** Date d'expiration de l'abonnement */
+  subscription_expires_at?: string | null;
 }
 
 export interface ProfileUpdate {
@@ -383,4 +387,5 @@ export interface ProfileUpdate {
   savings_objectives?: SavingsObjective[];
   pea_actions?: PEAHolding[];
   pea_etfs?: PEAHolding[];
+  subscription_expires_at?: string | null;
 }

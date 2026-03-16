@@ -18,12 +18,19 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, Calendar, CreditCard } from "lucide-react";
+import Link from "next/link";
 
 type User = {
   id: string;
   email?: string;
   user_metadata?: { full_name?: string; name?: string };
+};
+
+type SubscriptionStatus = {
+  isActive: boolean;
+  expiresAt: string | null;
+  daysRemaining: number;
 };
 
 /**
@@ -34,6 +41,10 @@ export default function ParametresPage() {
   const [user, setUser] = useState<User | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(
+    null,
+  );
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
@@ -45,6 +56,27 @@ export default function ParametresPage() {
           user_metadata: u.user_metadata,
         });
     });
+  }, []);
+
+  useEffect(() => {
+    const fetchSubscriptionStatus = async () => {
+      try {
+        const response = await fetch("/api/subscription/status");
+        if (response.ok) {
+          const data = await response.json();
+          setSubscription(data);
+        }
+      } catch (error) {
+        console.error(
+          "Erreur lors de la récupération du statut d'abonnement:",
+          error,
+        );
+      } finally {
+        setLoadingSubscription(false);
+      }
+    };
+
+    fetchSubscriptionStatus();
   }, []);
 
   const handleConfirmDeleteAccount = async () => {
@@ -79,6 +111,92 @@ export default function ParametresPage() {
           Gérez vos informations et les options de votre compte.
         </p>
       </div>
+
+      {/* Abonnement */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Abonnement</CardTitle>
+          <CardDescription>Gérez votre abonnement Horizon.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {loadingSubscription ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              Chargement...
+            </div>
+          ) : subscription?.isActive ? (
+            <>
+              <div className="flex items-center gap-3 rounded-lg bg-green-500/10 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-500/20">
+                  <CreditCard className="h-5 w-5 text-green-500" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-500">
+                    Abonnement actif
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Votre abonnement est valide
+                  </p>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Expire le :</span>
+                  <span className="font-medium">
+                    {subscription.expiresAt
+                      ? new Date(subscription.expiresAt).toLocaleDateString(
+                          "fr-FR",
+                          {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          },
+                        )
+                      : "—"}
+                  </span>
+                </div>
+                {subscription.daysRemaining > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {subscription.daysRemaining} jour
+                    {subscription.daysRemaining > 1 ? "s" : ""} restant
+                    {subscription.daysRemaining > 1 ? "s" : ""}
+                  </p>
+                )}
+                {subscription.daysRemaining <= 7 &&
+                  subscription.daysRemaining > 0 && (
+                    <div className="mt-2 rounded-lg bg-yellow-500/10 p-3 text-sm text-yellow-500">
+                      ⚠️ Votre abonnement expire bientôt. Pensez à le renouveler
+                      !
+                    </div>
+                  )}
+              </div>
+              <Button asChild variant="outline" className="w-full sm:w-auto">
+                <Link href="/abonnement">Gérer l&apos;abonnement</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-3 rounded-lg bg-destructive/10 p-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/20">
+                  <CreditCard className="h-5 w-5 text-destructive" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-destructive">
+                    Abonnement expiré
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Renouvelez votre abonnement pour continuer
+                  </p>
+                </div>
+              </div>
+              <Button asChild className="w-full sm:w-auto">
+                <Link href="/abonnement">Renouveler l&apos;abonnement</Link>
+              </Button>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Informations personnelles */}
       <Card>
@@ -131,8 +249,8 @@ export default function ParametresPage() {
             <DialogTitle>Supprimer le compte</DialogTitle>
             <DialogDescription>
               Êtes-vous sûr ? Cette action va supprimer définitivement toutes
-              les données liées à votre compte (revenus, dépenses, épargne,
-              PEA, etc.). Cette action est irréversible.
+              les données liées à votre compte (revenus, dépenses, épargne, PEA,
+              etc.). Cette action est irréversible.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">

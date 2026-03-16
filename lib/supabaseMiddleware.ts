@@ -49,12 +49,50 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Si connecté : rediriger /, /login et /register vers dashboard
+  // Vérification de l'abonnement pour les utilisateurs connectés accédant au dashboard
+  if (user && request.nextUrl.pathname.startsWith('/dashboard')) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('subscription_expires_at')
+      .eq('id', user.id)
+      .single()
+
+    if (profile) {
+      const expiresAt = profile.subscription_expires_at
+      const now = new Date()
+      const isExpired = !expiresAt || new Date(expiresAt) < now
+
+      if (isExpired) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/abonnement'
+        return NextResponse.redirect(url)
+      }
+    }
+  }
+
+  // Si connecté : rediriger /, /login et /register vers dashboard (ou abonnement si expiré)
   if (user) {
     const path = request.nextUrl.pathname
     if (path === '/' || path === '/login' || path === '/register') {
+      // Vérifier l'abonnement avant de rediriger
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_expires_at')
+        .eq('id', user.id)
+        .single()
+
       const url = request.nextUrl.clone()
-      url.pathname = '/dashboard'
+      
+      if (profile) {
+        const expiresAt = profile.subscription_expires_at
+        const now = new Date()
+        const isExpired = !expiresAt || new Date(expiresAt) < now
+
+        url.pathname = isExpired ? '/abonnement' : '/dashboard'
+      } else {
+        url.pathname = '/dashboard'
+      }
+      
       return NextResponse.redirect(url)
     }
   }
