@@ -4,6 +4,7 @@
  */
 
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { CookieOptions } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
@@ -35,6 +36,28 @@ export async function createClient() {
           // Ignore en middleware
         }
       },
+    },
+  })
+}
+
+/**
+ * Client Supabase admin avec service_role_key qui bypass le RLS.
+ * À utiliser UNIQUEMENT dans les API routes sécurisées (webhooks, etc.)
+ */
+export function createAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error(
+      'Missing Supabase env: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.'
+    )
+  }
+
+  return createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
     },
   })
 }

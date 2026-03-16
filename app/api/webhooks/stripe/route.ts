@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabaseServer";
+import { createAdminClient } from "@/lib/supabaseServer";
 import { stripe } from "@/lib/stripe";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
@@ -61,8 +61,8 @@ export async function POST(request: NextRequest) {
         );
 
         try {
-          const supabase = await createClient();
-          console.log("🗄️ Client Supabase créé");
+          const supabase = createAdminClient();
+          console.log("🗄️ Client Supabase Admin créé (bypass RLS)");
 
           console.log("📤 Tentative de mise à jour pour userId:", userId);
           console.log("📅 Date d'expiration:", expiresAt.toISOString());
