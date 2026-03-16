@@ -55,17 +55,55 @@ export async function POST(request: NextRequest) {
 
       if (userId && duration) {
         const durationDays = parseInt(duration, 10);
-        const now = new Date();
-        const expiresAt = new Date(
-          now.getTime() + durationDays * 24 * 60 * 60 * 1000,
-        );
 
         try {
           const supabase = createAdminClient();
           console.log("🗄️ Client Supabase Admin créé (bypass RLS)");
 
           console.log("📤 Tentative de mise à jour pour userId:", userId);
-          console.log("📅 Date d'expiration:", expiresAt.toISOString());
+
+          // Récupérer la date d'expiration actuelle
+          const { data: currentProfile } = await supabase
+            .from("profiles")
+            .select("subscription_expires_at")
+            .eq("id", userId)
+            .single();
+
+          console.log(
+            "📅 Date d'expiration actuelle:",
+            currentProfile?.subscription_expires_at || "Aucune",
+          );
+
+          // Calculer la nouvelle date d'expiration
+          const now = new Date();
+          let baseDate: Date;
+
+          if (
+            currentProfile?.subscription_expires_at &&
+            new Date(currentProfile.subscription_expires_at) > now
+          ) {
+            // Si l'abonnement est encore actif, ajouter à la date d'expiration existante
+            baseDate = new Date(currentProfile.subscription_expires_at);
+            console.log(
+              "➕ Ajout de",
+              durationDays,
+              "jours à l'abonnement existant",
+            );
+          } else {
+            // Si l'abonnement est expiré ou n'existe pas, partir d'aujourd'hui
+            baseDate = now;
+            console.log(
+              "🆕 Création d'un nouvel abonnement de",
+              durationDays,
+              "jours",
+            );
+          }
+
+          const expiresAt = new Date(
+            baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000,
+          );
+
+          console.log("📅 Nouvelle date d'expiration:", expiresAt.toISOString());
 
           // Utiliser upsert pour créer le profil s'il n'existe pas
           const { data, error } = await supabase
