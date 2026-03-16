@@ -61,20 +61,32 @@ export async function POST(request: NextRequest) {
 
         try {
           const supabase = await createClient();
-          const { error } = await supabase
+          console.log("🗄️ Client Supabase créé");
+          
+          console.log("📤 Tentative de mise à jour pour userId:", userId);
+          console.log("📅 Date d'expiration:", expiresAt.toISOString());
+          
+          const { data, error } = await supabase
             .from("profiles")
             .update({ 
               subscription_expires_at: expiresAt.toISOString() 
             })
-            .eq("id", userId);
+            .eq("id", userId)
+            .select();
+
+          console.log("📊 Résultat de la requête - data:", data);
+          console.log("📊 Résultat de la requête - error:", error);
 
           if (error) {
             console.error("❌ Erreur lors de la mise à jour de l'abonnement:", error);
+            console.error("❌ Détails erreur:", JSON.stringify(error));
           } else {
             console.log("✅ Abonnement activé jusqu'au:", expiresAt.toISOString());
+            console.log("✅ Lignes mises à jour:", data?.length || 0);
           }
         } catch (dbError) {
           console.error("❌ Erreur base de données:", dbError);
+          console.error("❌ Stack trace:", dbError instanceof Error ? dbError.stack : 'N/A');
         }
       } else {
         console.error("❌ userId ou duration manquant dans les metadata");
