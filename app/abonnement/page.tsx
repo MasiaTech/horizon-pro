@@ -316,7 +316,7 @@ export default function AbonnementPage() {
                           }`}
                         />
                         <span className="text-sm text-foreground">
-                          Simulateur d'impôts
+                          Simulateur d&apos;impôts
                         </span>
                       </li>
                       <li className="flex items-start gap-3">
@@ -371,7 +371,7 @@ export default function AbonnementPage() {
               ✅ Pas de renouvellement automatique
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Votre abonnement ne se renouvelle pas automatiquement. Vous devez créditer manuellement pour prolonger l'accès. Aucune surprise sur votre carte bancaire !
+              Votre abonnement ne se renouvelle pas automatiquement. Vous devez créditer manuellement pour prolonger l&apos;accès. Aucune surprise sur votre carte bancaire !
             </p>
           </div>
           
