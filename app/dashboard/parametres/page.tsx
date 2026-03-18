@@ -18,8 +18,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Trash2, Calendar, CreditCard } from "lucide-react";
-import { ManageSubscriptionDialog } from "@/components/ManageSubscriptionDialog";
+import { Trash2 } from "lucide-react";
+// [ABONNEMENT] import { Calendar, CreditCard } from "lucide-react";
+// [ABONNEMENT - désactivé - app 100% gratuite - à réactiver plus tard]
+// import { ManageSubscriptionDialog } from "@/components/ManageSubscriptionDialog";
 
 type User = {
   id: string;
@@ -27,11 +29,12 @@ type User = {
   user_metadata?: { full_name?: string; name?: string };
 };
 
-type SubscriptionStatus = {
-  isActive: boolean;
-  expiresAt: string | null;
-  daysRemaining: number;
-};
+// [ABONNEMENT - désactivé - à réactiver plus tard]
+// type SubscriptionStatus = {
+//   isActive: boolean;
+//   expiresAt: string | null;
+//   daysRemaining: number;
+// };
 
 /**
  * Page Paramètres : infos personnelles et suppression du compte.
@@ -41,11 +44,10 @@ export default function ParametresPage() {
   const [user, setUser] = useState<User | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [subscription, setSubscription] = useState<SubscriptionStatus | null>(
-    null,
-  );
-  const [loadingSubscription, setLoadingSubscription] = useState(true);
-  const [manageSubDialogOpen, setManageSubDialogOpen] = useState(false);
+  // [ABONNEMENT - désactivé - à réactiver plus tard]
+  // const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+  // const [loadingSubscription, setLoadingSubscription] = useState(true);
+  // const [manageSubDialogOpen, setManageSubDialogOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -59,26 +61,26 @@ export default function ParametresPage() {
     });
   }, []);
 
-  useEffect(() => {
-    const fetchSubscriptionStatus = async () => {
-      try {
-        const response = await fetch("/api/subscription/status");
-        if (response.ok) {
-          const data = await response.json();
-          setSubscription(data);
-        }
-      } catch (error) {
-        console.error(
-          "Erreur lors de la récupération du statut d'abonnement:",
-          error,
-        );
-      } finally {
-        setLoadingSubscription(false);
-      }
-    };
-
-    fetchSubscriptionStatus();
-  }, []);
+  // [ABONNEMENT - désactivé - à réactiver plus tard]
+  // useEffect(() => {
+  //   const fetchSubscriptionStatus = async () => {
+  //     try {
+  //       const response = await fetch("/api/subscription/status");
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         setSubscription(data);
+  //       }
+  //     } catch (error) {
+  //       console.error(
+  //         "Erreur lors de la récupération du statut d'abonnement:",
+  //         error,
+  //       );
+  //     } finally {
+  //       setLoadingSubscription(false);
+  //     }
+  //   };
+  //   fetchSubscriptionStatus();
+  // }, []);
 
   const handleConfirmDeleteAccount = async () => {
     setDeleteLoading(true);
@@ -113,7 +115,7 @@ export default function ParametresPage() {
         </p>
       </div>
 
-      {/* Abonnement */}
+      {/* [ABONNEMENT - désactivé - app 100% gratuite - à réactiver plus tard]
       <Card>
         <CardHeader>
           <CardTitle>Abonnement</CardTitle>
@@ -215,6 +217,7 @@ export default function ParametresPage() {
           )}
         </CardContent>
       </Card>
+      */}
 
       {/* Informations personnelles */}
       <Card>
@@ -292,10 +295,12 @@ export default function ParametresPage() {
         </DialogContent>
       </Dialog>
 
+      {/* [ABONNEMENT - désactivé - à réactiver plus tard]
       <ManageSubscriptionDialog
         open={manageSubDialogOpen}
         onOpenChange={setManageSubDialogOpen}
       />
+      */}
     </div>
   );
 }
