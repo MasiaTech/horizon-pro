@@ -249,6 +249,10 @@ export default function LoginForm() {
           S&apos;inscrire
         </Link>
       </p>
+      <p className="mt-4 text-center text-xs text-muted-foreground">
+        Investir comporte des risques, y compris un risque de perte en capital.
+        Les simulations proposees par Horizon sont indicatives et non contractuelles.
+      </p>
     </div>
   );
 }

@@ -1088,7 +1088,7 @@ export default function EpargnePage() {
                       goalAmount > 0 &&
                       monthGoalReached != null && (
                         <p className="text-sm text-muted-foreground">
-                          Atteinte de l&apos;objectif prévue dans{" "}
+                          Dans ce scénario, l&apos;objectif pourrait être atteint dans environ{" "}
                           {Math.floor(monthGoalReached / 12) > 0 && (
                             <>
                               {Math.floor(monthGoalReached / 12)} an{" "}

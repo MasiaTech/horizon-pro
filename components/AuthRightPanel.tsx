@@ -69,10 +69,15 @@ export function AuthRightPanel() {
                 <Target className="size-4" />
               </span>
               <span>
-                Objectifs clairs : épargne de précaution, 150 k€ en PEA.
+                Objectifs de simulation : epargne de precaution et scenarios PEA.
               </span>
             </li>
           </ul>
+          <p className="rounded-md border border-border/60 bg-background/40 p-3 text-xs text-muted-foreground">
+            Investir comporte des risques, y compris un risque de perte en capital.
+            Les informations affichees sont indicatives et ne constituent pas un
+            conseil en investissement ni un conseil fiscal.
+          </p>
         </div>
       </div>
     </section>

@@ -24,6 +24,11 @@ export default function DashboardLayoutClient({
         <DashboardSidebar />
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <DashboardHeader onMenuClick={() => setMobileMenuOpen(true)} />
+          <div className="border-b border-border/50 bg-muted/20 px-4 py-2 text-xs text-muted-foreground sm:px-6">
+            Investir comporte des risques, y compris un risque de perte en capital.
+            Les informations affichées sont indicatives et ne constituent ni un
+            conseil en investissement, ni un conseil fiscal.
+          </div>
           <main className="min-h-0 flex-1 overflow-auto">{children}</main>
         </div>
       </div>

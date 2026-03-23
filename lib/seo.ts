@@ -4,14 +4,14 @@ export const SITE_URL =
 export const SITE_NAME = "Horizon";
 
 export const DEFAULT_TITLE =
-  "Horizon — Dashboard stratégique vers l'indépendance financière";
+  "Horizon — Budget et simulations financieres";
 
 export const DEFAULT_DESCRIPTION =
-  "Outil pour salariés, particuliers et freelances en France. Visualisez votre reste à investir, simulez l'impôt sur le revenu, projetez votre PEA et votre épargne. Revenus, dépenses, simulateur impôt, épargne et PEA en un seul endroit.";
+  "Outil pour salaries, particuliers et freelances en France. Visualisez votre reste a investir et simulez differents scenarios (impot, epargne, PEA) dans un dashboard unique. Investir comporte des risques de perte en capital.";
 
 export const KEYWORDS = [
-  "liberté financière",
-  "indépendance financière",
+  "simulation financiere",
+  "budget personnel",
   "simulateur impôt sur le revenu",
   "impôt revenus France",
   "salarié freelance particulier",
@@ -24,5 +24,5 @@ export const KEYWORDS = [
   "revenus dépenses",
   "objectif épargne",
   "projection PEA",
-  "stratégie investissement",
+  "risque investissement",
 ].join(", ");

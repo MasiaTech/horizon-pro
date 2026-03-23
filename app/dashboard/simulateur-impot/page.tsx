@@ -274,9 +274,9 @@ export default function SimulateurImpotPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Optimisation</CardTitle>
+          <CardTitle>Repères indicatifs</CardTitle>
           <CardDescription>
-            Recommandations des experts en gestion financière : seuils d&apos;imposition et impact sur votre net.
+            Seuils d&apos;imposition et impacts simulés sur votre net, à titre informatif.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -296,13 +296,13 @@ export default function SimulateurImpotPage() {
                   </span>{" "}
                   de plus, vous passerez au palier « {hints.nextBracketLabel} » (taux marginal{" "}
                   {hints.nextBracketRatePercent} % sur la part au-dessus du seuil). Vous ne
-                  perdrez pas d&apos;argent en gagnant plus (barème progressif), mais les experts
-                  recommandent d&apos;anticiper ce seuil (épargne, défiscalisation, report de revenus).
+                  perdrez pas d&apos;argent en gagnant plus (barème progressif). Ce
+                  repère peut vous aider à comparer différents scénarios.
                 </p>
                 {extraFor1000Net != null && (
                   <p className="mt-2 text-sm text-foreground">
-                    Pour évoluer sans être perdant : pour 1 000 € net de plus par
-                    an (calcul réel avec l&apos;impôt), visez environ{" "}
+                    Pour un scénario de + 1 000 € net par an (calcul indicatif avec
+                    l&apos;impôt), il faudrait environ{" "}
                     <span className="font-semibold tabular-nums">
                       {formatEur(extraFor1000Net.extraGross)} €
                     </span>{" "}
@@ -331,7 +331,7 @@ export default function SimulateurImpotPage() {
                   {hints.prevBracketRatePercent != null
                     ? `${hints.prevBracketRatePercent} % au lieu de ${result.bracket.ratePercent} %`
                     : "taux inférieur"}
-                  ). Vous paieriez{" "}
+                  ). Dans cette simulation, vous paieriez{" "}
                   <span className="font-semibold tabular-nums">
                     {formatEur(hints.netGainIfJustBelowThreshold)} €
                   </span>{" "}
@@ -339,7 +339,7 @@ export default function SimulateurImpotPage() {
                   <span className="font-semibold">
                     {formatEur(hints.netGainIfJustBelowThreshold)} € net en plus
                   </span>
-                  . C&apos;est bien le gain réel (calcul par tranches).
+                  . Résultat purement indicatif (calcul par tranches).
                 </p>
               </div>
             )}
@@ -370,6 +370,11 @@ export default function SimulateurImpotPage() {
               </p>
             </div>
           )}
+
+          <p className="text-xs text-muted-foreground">
+            Ces repères sont fournis à titre indicatif et ne constituent pas un
+            conseil fiscal.
+          </p>
 
           {hints.eurosToNextBracket == null &&
             hints.eurosAboveCurrentThreshold == null &&
